@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+  <title>ドボン（試作1）</title>
+
+  <!-- PyScript（固定版） -->
+  <link rel="stylesheet" href="https://pyscript.net/releases/2026.2.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2026.2.1/core.js"></script>
+
+  <!-- cards.js -->
+  <script defer src="cards.js"></script>
+
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 18px; background: #fff; }
+    h1 { margin: 0 0 10px 0; font-size: 22px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 520px 320px 320px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    /* 左：プレーヤー（CPU3人）の箱 */
+    .cpu-box {
+      border: 1px solid #999;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .cpu-title { font-weight: 800; margin-bottom: 10px; }
+    .mini-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .mini-row img { width: 52px; height: auto; }
+
+    /* 中央：場札 */
+    .center { text-align: center; }
+    .label { font-size: 22px; font-weight: 900; margin-bottom: 10px; }
+
+    .field-frame {
+      width: 280px;
+      height: 360px;
+      margin: 0 auto;
+      border-radius: 26px;
+      background: #2f5f78;
+      padding: 14px;
+      box-sizing: border-box;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow: 0 4px 10px rgba(0,0,0,.15);
+    }
+    .field-frame img { width: 240px; height: auto; border-radius: 14px; background:#fff; }
+
+    /* 右：山札 */
+    .right { text-align:center; }
+    .deck-wrap { margin-top: 6px; display:flex; justify-content:center; }
+    .deck-card {
+      width: 240px; height: auto; cursor: pointer;
+      border-radius: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,.15);
+      transition: transform .12s ease;
+      user-select: none;
+    }
+    .deck-card:hover { transform: translateY(-6px); }
+    .deck-card.disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+
+    /* 下：あなたの手札 */
+    .hand-area { margin-top: 18px; }
+    .hand-title { font-size: 26px; font-weight: 900; margin: 0 0 10px 0; }
+
+    .hand-frame {
+      border: 1px solid #999;
+      border-radius: 10px;
+      padding: 14px;
+      display:flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      min-height: 220px;
+      align-items: flex-end;
+    }
+
+    .hand-card {
+      width: 140px;
+      height: auto;
+      border-radius: 14px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .12s ease, box-shadow .12s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,.12);
+    }
+    .hand-card:hover {
+      transform: translateY(-18px);
+      box-shadow: 0 10px 18px rgba(0,0,0,.18);
+    }
+    .hand-card.selected {
+      transform: translateY(-26px);
+      outline: 4px solid rgba(0,120,255,.35);
+    }
+    .hand-card.disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: 0 2px 6px rgba(0,0,0,.12);
+    }
+
+    /* メッセージ */
+    #msg {
+      margin-top: 10px;
+      font-size: 16px;
+      white-space: pre-line;
+    }
+    .ok { color: #156c2f; font-weight: 800; }
+    .ng { color: #b00020; font-weight: 800; }
+
+    .toolbar { margin-top: 10px; display:flex; gap: 10px; flex-wrap: wrap; }
+    button { font-size: 16px; padding: 8px 14px; }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 1fr; }
+      .field-frame { width: 260px; height: 330px; }
+      .field-frame img { width: 220px; }
+      .deck-card { width: 200px; }
+      .hand-card { width: 120px; }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>ドボン（試作1：配布＋場札＋あなたが出す）</h1>
+
+  <div class="layout">
+    <!-- 左：CPU -->
+    <div>
+      <div class="cpu-box">
+        <div class="cpu-title" id="cpuA-title">プレーヤーA（0枚）</div>
+        <div class="mini-row" id="cpuA-cards"></div>
+      </div>
+      <div class="cpu-box">
+        <div class="cpu-title" id="cpuB-title">プレーヤーB（0枚）</div>
+        <div class="mini-row" id="cpuB-cards"></div>
+      </div>
+      <div class="cpu-box">
+        <div class="cpu-title" id="cpuC-title">プレーヤーC（0枚）</div>
+        <div class="mini-row" id="cpuC-cards"></div>
+      </div>
+    </div>
+
+    <!-- 中央：場 -->
+    <div class="center">
+      <div class="label">場のカード</div>
+      <div class="field-frame">
+        <img id="field-card" src="" alt="field">
+      </div>
+    </div>
+
+    <!-- 右：山 -->
+    <div class="right">
+      <div class="label" id="deck-title">山のカード（0枚）</div>
+      <div class="deck-wrap">
+        <img id="deck-card" class="deck-card" src="" alt="deck">
+      </div>
+
+      <div class="toolbar">
+        <button py-click="reset_game">配り直し</button>
+      </div>
+      <div id="msg"></div>
+    </div>
+  </div>
+
+  <!-- 下：あなた -->
+  <div class="hand-area">
+    <div class="hand-title">あなたのカード</div>
+    <div id="your-hand" class="hand-frame"></div>
+  </div>
+
+  <script type="py" src="main.py"></script>
+</body>
+</html>
