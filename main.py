@@ -85,8 +85,8 @@ def render_deck():
     deck_title.innerText = f"山のカード（{len(deck)}枚）"
     deck_img.src = _cards.getUrl(0)
 
-    # ルール：出せるカードがあるなら山は引けない（今段階の仕様）
-    if has_playable():
+    # ★今回はテストのため「常に引ける」にする
+    if len(deck) == 0:
         deck_img.classList.add("disabled")
     else:
         deck_img.classList.remove("disabled")
@@ -100,27 +100,87 @@ def render_field():
 def render_hand():
     clear_node(your_hand)
 
-    playable = set()
-    if field is not None:
-        for c in you:
-            if can_play(c, field):
-                playable.add(c)
+    # まず全カード要素を作る
+    card_ids = list(you)
 
-    for c in you:
+    # コンテナ幅（px）
+    w = int(your_hand.clientWidth)
+    pad = 28  # paddingぶんの安全マージン
+    avail = max(200, w - pad)
+
+    card_w = 140
+    gap = 18
+
+    # 通常並びで収まるか？
+    n = len(card_ids)
+    total_normal = n * card_w + max(0, n - 1) * gap
+    use_stack = total_normal > avail
+
+    # 重ね表示のパラメータ（自動調整）
+    # 横方向のずらし幅（小さいほど重なる）
+    step_x = 34
+    # 縦方向のずらし（2段目以降）
+    step_y = 42
+
+    # 1行に置ける枚数（重ね表示時）
+    if use_stack:
+        max_per_row = max(1, int((avail - card_w) // step_x) + 1)
+        # 上限を設けたいならここで制限（例：最大18枚/行）
+        max_per_row = min(max_per_row, 18)
+    else:
+        max_per_row = n  # 使わない
+
+    # 高さ見積もり（重ね表示時）
+    rows = 1
+    if use_stack and n > 0:
+        rows = (n + max_per_row - 1) // max_per_row
+        # リミッター例：最大3段に制限（それ以上はスクロールで見せる）
+        rows = min(rows, 3)
+
+    # コンテナの最低高さを調整
+    if use_stack:
+        # 240はカード高さに近い値。段が増えたら増やす
+        your_hand.style.minHeight = f"{240 + (rows - 1) * step_y}px"
+    else:
+        your_hand.style.minHeight = "240px"
+
+    # 実配置
+    for idx, c in enumerate(card_ids):
         im = img_el(_cards.getUrl(c), "hand-card")
         im.dataset.cardId = str(c)
 
-        # 出せないカードは薄く（ただしクリックは可能→理由表示のため）
-        if field is not None and c not in playable:
+        # 出せる/出せない表示（判定は維持）
+        if field is not None and not can_play(c, field):
             im.classList.add("disabled")
 
+        # クリックで場に出す
         def make_onclick(card_id):
             def _onclick(evt):
                 asyncio.create_task(play_card(card_id))
             return _onclick
-
         im.addEventListener("click", make_onclick(c))
+
+        if not use_stack:
+            # 通常：流し込み（position指定しない）
+            im.style.position = "static"
+        else:
+            # 重ね表示：絶対配置
+            im.classList.add("stack")
+            r = idx // max_per_row
+            cidx = idx % max_per_row
+
+            # リミッター（3段まで）を超えたら、最後の段に詰める
+            if r >= 3:
+                r = 2
+
+            left = cidx * step_x
+            top = r * step_y
+            im.style.left = f"{left}px"
+            im.style.top = f"{top}px"
+            im.style.zIndex = str(idx)
+
         your_hand.appendChild(im)
+
 
 def render_all():
     render_cpu(cpuA_title, cpuA_cards, "プレーヤーA", cpuA)
@@ -178,25 +238,24 @@ async def play_card(card_id: int):
         if field is None:
             return
 
+        # クリックしたカードが手札に存在しない（タイミング差）対策
         if card_id not in you:
             return
 
         if not can_play(card_id, field):
-            set_msg("そのカードは場に出せません（同じマーク または 同じ数字 ではありません）。\n出せるカードが無いなら山札をクリックして1枚取ります。", ng=True)
+            set_msg("そのカードは場に出せません。\n（同じマーク または 同じ数字 ではありません）", ng=True)
             return
 
-        # 場に出す：手札から削除→場札更新
+        # 場に出す
         you.remove(card_id)
         field = card_id
 
-        set_msg("場に出しました。", ok=True)
+        set_msg("場に出しました。次の手を選んでください。\n（今回はテストのため、出せても山札を取れます）", ok=True)
         render_all()
-
-        # ★この先：ここで「ドボン！」判定やCPUの手番に進める
-        # （今回はここまで）
 
     finally:
         busy = False
+
 
 async def draw_from_deck():
     global busy
@@ -208,14 +267,10 @@ async def draw_from_deck():
             set_msg("山札がありません。", ng=True)
             return
 
-        # ルール：出せるカードがあるなら山札を引けない（今段階）
-        if has_playable():
-            set_msg("出せるカードがあります。まず手札から場に出してください。", ng=True)
-            return
-
         c = deck.pop()
         you.append(c)
-        set_msg("山札から1枚取りました。新しく出せるカードがあるか確認してください。", ok=True)
+
+        set_msg("山札から1枚取りました。", ok=True)
         render_all()
 
     finally:
