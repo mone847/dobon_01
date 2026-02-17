@@ -290,7 +290,7 @@ async def play_card(card_id: int):
                 set_msg("手札が1枚です。カードは出さずに「ドボン！」を押してください。", ok=True)
             else:
                 set_msg("手札が1枚のときはドボンでしか上がれません。\nドボンできないので山から1枚取ってください。", ng=True)
-             return
+            return
 
         if not can_play(card_id, field):
             set_msg("そのカードは場に出せません。\n（同じマーク または 同じ数字 ではありません）", ng=True)
