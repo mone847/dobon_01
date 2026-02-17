@@ -148,34 +148,34 @@ def render_hand():
     total_normal = n * card_w + max(0, n - 1) * gap
     use_stack = total_normal > avail
 
-    # ★上余白：通常/重ねで切替
-    # （CSSのpadding-topを上書きする）
+    # ★上余白：通常/重ねで切替（ホバーで上がっても切れない）
     your_hand.style.paddingTop = "70px" if use_stack else "38px"
 
     # 重ね表示のパラメータ
     step_x = 34
     step_y = 42
-    base_top = 10  # ★重ね表示の開始位置を少し下げる
+    base_top = 10
 
+    # 1行に置ける枚数（重ね表示時）
     if use_stack:
         max_per_row = max(1, int((avail - card_w) // step_x) + 1)
         max_per_row = min(max_per_row, 18)
     else:
         max_per_row = n if n > 0 else 1
 
-    # 段数見積もり（最大3段、超えたらスクロール）
+    # 段数（最大3段）
     rows = 1
     if use_stack and n > 0:
         rows = (n + max_per_row - 1) // max_per_row
         rows = min(rows, 3)
 
-    # 高さ確保（段が増えたら増やす）
+    # 高さ確保
     if use_stack:
         your_hand.style.minHeight = f"{240 + (rows - 1) * step_y}px"
     else:
         your_hand.style.minHeight = "240px"
 
-    # 出せる/出せないの判定（表示用）
+    # 出せる/出せない（表示用）
     playable = set()
     if field is not None:
         for c in you:
@@ -199,15 +199,13 @@ def render_hand():
         event_proxies.append(handler)
         im.addEventListener("click", handler)
 
-        if not use_stack:
-            # 通常：流し込み
-            im.style.position = "static"
-        else:
-            # 重ね：必ず r/cidx を先に作ってから使う（★ここが重要）
+        # ★★★ ここが超安全：r/cidx を必ず定義してから使う ★★★
+        r = 0
+        cidx = idx
+
+        if use_stack:
             r = idx // max_per_row
             cidx = idx % max_per_row
-
-            # 3段超は3段目に詰める（スクロール前提）
             if r >= 3:
                 r = 2
 
@@ -218,6 +216,8 @@ def render_hand():
             im.style.left = f"{left}px"
             im.style.top = f"{top}px"
             im.style.zIndex = str(idx)
+        else:
+            im.style.position = "static"
 
         your_hand.appendChild(im)
 
