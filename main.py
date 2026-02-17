@@ -148,6 +148,9 @@ def render_hand():
     total_normal = n * card_w + max(0, n - 1) * gap
     use_stack = total_normal > avail
 
+    # ★重ね表示のときだけ、上に浮く分の余白を多めに確保
+    your_hand.style.paddingTop = "70px" if use_stack else "38px"
+
     # 重ね表示のパラメータ（自動調整）
     # 横方向のずらし幅（小さいほど重なる）
     step_x = 34
@@ -159,6 +162,9 @@ def render_hand():
         max_per_row = max(1, int((avail - card_w) // step_x) + 1)
         # 上限を設けたいならここで制限（例：最大18枚/行）
         max_per_row = min(max_per_row, 18)
+        base_top = 10  # ★追加
+        top = base_top + r * step_y
+        im.style.top = f"{top}px"
     else:
         max_per_row = n  # 使わない
 
