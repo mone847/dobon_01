@@ -67,43 +67,56 @@
     .deck-card.disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
 
     /* 下：あなたの手札 */
-    .hand-area { margin-top: 18px; }
-    .hand-title { font-size: 26px; font-weight: 900; margin: 0 0 10px 0; }
+.hand-frame{
+  border: 1px solid #999;
+  border-radius: 10px;
+  padding: 14px;
+  position: relative;          /* ★重ね表示の土台 */
+  min-height: 240px;           /* ★カードを重ねても高さ確保 */
+  overflow: auto;              /* ★はみ出たらスクロール（リミッター） */
+  background: #fff;
+}
 
-    .hand-frame {
-      border: 1px solid #999;
-      border-radius: 10px;
-      padding: 14px;
-      display:flex;
-      gap: 18px;
-      flex-wrap: wrap;
-      min-height: 220px;
-      align-items: flex-end;
-    }
+/* 手札カード（通常でも重ねでも共通） */
+.hand-card{
+  width: 140px;
+  height: auto;
+  border-radius: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .12s ease, box-shadow .12s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,.12);
+  background: #fff;
+}
 
-    .hand-card {
-      width: 140px;
-      height: auto;
-      border-radius: 14px;
-      cursor: pointer;
-      user-select: none;
-      transition: transform .12s ease, box-shadow .12s ease;
-      box-shadow: 0 2px 6px rgba(0,0,0,.12);
-    }
-    .hand-card:hover {
-      transform: translateY(-18px);
-      box-shadow: 0 10px 18px rgba(0,0,0,.18);
-    }
-    .hand-card.selected {
-      transform: translateY(-26px);
-      outline: 4px solid rgba(0,120,255,.35);
-    }
-    .hand-card.disabled {
-      opacity: .45;
-      cursor: not-allowed;
-      transform: none !important;
-      box-shadow: 0 2px 6px rgba(0,0,0,.12);
-    }
+/* ★重ね表示モードのときは absolute で配置する（Python側で設定） */
+.hand-card.stack{
+  position: absolute;
+}
+
+/* ★ホバーで“少し持ち上がる”＋最前面に */
+.hand-card:hover{
+  transform: translateY(-22px);
+  box-shadow: 0 12px 18px rgba(0,0,0,.18);
+  z-index: 999 !important;
+}
+
+/* 出せないカードの見た目（今回は「取る」優先なので残すだけ） */
+.hand-card.disabled{
+  opacity: .55;
+}
+
+/* 山札：ホバー＋クリック */
+.deck-card{
+  width: 240px; height: auto; cursor: pointer;
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.15);
+  transition: transform .12s ease;
+  user-select: none;
+}
+.deck-card:hover{ transform: translateY(-6px); }
+.deck-card.disabled{ opacity:.45; cursor:not-allowed; transform:none !important; }
+
 
     /* メッセージ */
     #msg {
