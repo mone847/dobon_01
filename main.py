@@ -249,6 +249,9 @@ async def play_card(card_id: int):
         # 場に出す
         you.remove(card_id)
         field = card_id
+        
+        # ★念のため場札だけ先に更新（render_allの中でも更新されます）
+        render_field()
 
         set_msg("場に出しました。次の手を選んでください。\n（今回はテストのため、出せても山札を取れます）", ok=True)
         render_all()
