@@ -74,9 +74,13 @@ def can_play(card_id: int, field_id: int) -> bool:
     return (s1 == s2) or (r1 == r2)
 
 def has_playable() -> bool:
+    # ★手札が1枚のときは「ドボン以外では上がれない」ので、出せる扱いにしない
     if field is None:
         return False
+    if len(you) <= 1:
+        return False
     return any(can_play(c, field) for c in you)
+
 
 def set_msg(text: str, ok=False, ng=False):
     msg.className = "ok" if ok else ("ng" if ng else "")
@@ -277,6 +281,16 @@ async def play_card(card_id: int):
         # クリックしたカードが手札に存在しない（タイミング差）対策
         if card_id not in you:
             return
+        
+        # ★手札が1枚のときは「ドボン宣言」以外では上がれないので出せない
+        if len(you) == 1:
+            target = card_to_suit_rank(field)[1]
+            total = card_to_suit_rank(you[0])[1]
+            if total == target:
+                set_msg("手札が1枚です。カードは出さずに「ドボン！」を押してください。", ok=True)
+            else:
+                set_msg("手札が1枚のときはドボンでしか上がれません。\nドボンできないので山から1枚取ってください。", ng=True)
+             return
 
         if not can_play(card_id, field):
             set_msg("そのカードは場に出せません。\n（同じマーク または 同じ数字 ではありません）", ng=True)
