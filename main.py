@@ -19,6 +19,7 @@ deck_img = document.getElementById("deck-card")
 
 your_hand = document.getElementById("your-hand")
 msg = document.getElementById("msg")
+dobon_btn = document.getElementById("dobon-btn")
 
 # ===== cards.js bridge =====
 _cards = None
@@ -50,6 +51,22 @@ def card_to_suit_rank(i: int):
     rank = (i - 1) % 13 + 1     # 1..13
     suits = ["C", "D", "H", "S"]  # ♣ ♦ ♥ ♠ のつもり
     return suits[suit_index], rank
+
+def dobon_possible():
+    """
+    手札すべての合計が
+    場札の数字と一致すればドボン可能
+    """
+    if field is None or len(you) == 0:
+        return (False, [])
+
+    target = card_to_suit_rank(field)[1]  # 場の数字
+    total = sum(card_to_suit_rank(cid)[1] for cid in you)
+
+    if total == target:
+        return (True, you.copy())  # 全部使う
+    return (False, [])
+
 
 def can_play(card_id: int, field_id: int) -> bool:
     s1, r1 = card_to_suit_rank(card_id)
@@ -88,8 +105,8 @@ def render_deck():
     deck_title.innerText = f"山のカード（{len(deck)}枚）"
     deck_img.src = _cards.getUrl(0)
 
-    # ★今回はテストのため「常に引ける」にする
-    if len(deck) == 0:
+    # ★出せるカードがあるなら山札は引けない
+    if len(deck) == 0 or has_playable():
         deck_img.classList.add("disabled")
     else:
         deck_img.classList.remove("disabled")
@@ -289,14 +306,64 @@ async def draw_from_deck():
             set_msg("山札がありません。", ng=True)
             return
 
+        # ★出せるカードがあるなら引けない
+        if has_playable():
+            set_msg("出せるカードがあります。まず手札から場に出してください。", ng=True)
+            return
+
         c = deck.pop()
         you.append(c)
-
         set_msg("山札から1枚取りました。", ok=True)
         render_all()
 
     finally:
         busy = False
+
+def card_label(cid: int) -> str:
+    s, r = card_to_suit_rank(cid)
+    suit_symbol = {"C":"♣","D":"♦","H":"♥","S":"♠"}.get(s, s)
+    return f"{suit_symbol}{r}"
+
+def hand_sum(cards):
+    return sum(card_to_suit_rank(cid)[1] for cid in cards)
+
+async def try_dobon_async():
+    global busy
+    if busy:
+        return
+    busy = True
+    try:
+        ok, used = dobon_possible()
+        target = card_to_suit_rank(field)[1]
+        total = sum(card_to_suit_rank(cid)[1] for cid in you)
+
+        if not ok:
+            set_msg(
+                f"ドボンできません。\n"
+                f"手札の合計：{total}\n"
+                f"場の数字：{target}",
+                ng=True
+            )
+            return
+
+        # 勝利
+        set_msg(
+            "ドボン！ あなたの勝ち！\n"
+            f"手札の合計：{total} = 場の数字：{target}",
+            ok=True
+        )
+
+        # 操作停止
+        deck_img.classList.add("disabled")
+        dobon_btn.disabled = True
+
+    finally:
+        busy = False
+
+
+def try_dobon(event=None):
+    asyncio.create_task(try_dobon_async())
+
 
 # ===== PyScript entry points =====
 def reset_game(event=None):
