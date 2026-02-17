@@ -1,6 +1,9 @@
 from js import document, window
 import random
 import asyncio
+from pyodide.ffi import create_proxy
+
+event_proxies = []
 
 # ===== DOM =====
 cpuA_title = document.getElementById("cpuA-title")
@@ -98,6 +101,14 @@ def render_field():
         field_img.src = _cards.getUrl(field)
 
 def render_hand():
+    global event_proxies
+    for p in event_proxies:
+        try:
+            p.destroy()
+        except Exception:
+            pass
+    event_proxies = []
+
     clear_node(your_hand)
 
     # まず全カード要素を作る
@@ -155,10 +166,18 @@ def render_hand():
 
         # クリックで場に出す
         def make_onclick(card_id):
+            async def _run():
+                await play_card(card_id)
+
             def _onclick(evt):
-                asyncio.create_task(play_card(card_id))
+                asyncio.create_task(_run())
+
             return _onclick
-        im.addEventListener("click", make_onclick(c))
+
+        handler = create_proxy(make_onclick(c))
+        event_proxies.append(handler)          # ★保持して破棄されないように
+        im.addEventListener("click", handler)
+
 
         if not use_stack:
             # 通常：流し込み（position指定しない）
@@ -282,10 +301,6 @@ async def draw_from_deck():
 # ===== PyScript entry points =====
 def reset_game(event=None):
     asyncio.create_task(reset_async())
-
-def _onclick(evt):
-    print("clicked", card_id)
-    asyncio.create_task(play_card(card_id))
 
 # init
 asyncio.create_task(reset_async())
