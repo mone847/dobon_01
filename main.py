@@ -249,7 +249,7 @@ async def play_card(card_id: int):
         # 場に出す
         you.remove(card_id)
         field = card_id
-        
+
         # ★念のため場札だけ先に更新（render_allの中でも更新されます）
         render_field()
 
@@ -282,6 +282,10 @@ async def draw_from_deck():
 # ===== PyScript entry points =====
 def reset_game(event=None):
     asyncio.create_task(reset_async())
+
+def _onclick(evt):
+    print("clicked", card_id)
+    asyncio.create_task(play_card(card_id))
 
 # init
 asyncio.create_task(reset_async())
