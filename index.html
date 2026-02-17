@@ -70,7 +70,7 @@
 .hand-frame{
   border: 1px solid #999;
   border-radius: 10px;
-  padding: 14px;
+  padding: 36px;
   position: relative;          /* ★重ね表示の土台 */
   min-height: 240px;           /* ★カードを重ねても高さ確保 */
   overflow: auto;              /* ★はみ出たらスクロール（リミッター） */
@@ -177,6 +177,7 @@
 
       <div class="toolbar">
         <button py-click="reset_game">配り直し</button>
+        <button id="dobon-btn" py-click="try_dobon">ドボン！</button>
       </div>
       <div id="msg"></div>
     </div>
