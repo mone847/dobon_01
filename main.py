@@ -123,6 +123,8 @@ def render_field():
 
 def render_hand():
     global event_proxies
+
+    # 古い proxy を破棄（クリックが増殖しないように）
     for p in event_proxies:
         try:
             p.destroy()
@@ -132,95 +134,87 @@ def render_hand():
 
     clear_node(your_hand)
 
-    # まず全カード要素を作る
     card_ids = list(you)
 
-    # コンテナ幅（px）
+    # コンテナ幅
     w = int(your_hand.clientWidth)
-    pad = 28  # paddingぶんの安全マージン
+    pad = 28
     avail = max(200, w - pad)
 
     card_w = 140
     gap = 18
 
-    # 通常並びで収まるか？
     n = len(card_ids)
     total_normal = n * card_w + max(0, n - 1) * gap
     use_stack = total_normal > avail
 
-    # ★重ね表示のときだけ、上に浮く分の余白を多めに確保
+    # ★上余白：通常/重ねで切替
+    # （CSSのpadding-topを上書きする）
     your_hand.style.paddingTop = "70px" if use_stack else "38px"
 
-    # 重ね表示のパラメータ（自動調整）
-    # 横方向のずらし幅（小さいほど重なる）
+    # 重ね表示のパラメータ
     step_x = 34
-    # 縦方向のずらし（2段目以降）
     step_y = 42
+    base_top = 10  # ★重ね表示の開始位置を少し下げる
 
-    # 1行に置ける枚数（重ね表示時）
     if use_stack:
         max_per_row = max(1, int((avail - card_w) // step_x) + 1)
-        # 上限を設けたいならここで制限（例：最大18枚/行）
         max_per_row = min(max_per_row, 18)
-        base_top = 10  # ★追加
-        top = base_top + r * step_y
-        im.style.top = f"{top}px"
     else:
-        max_per_row = n  # 使わない
+        max_per_row = n if n > 0 else 1
 
-    # 高さ見積もり（重ね表示時）
+    # 段数見積もり（最大3段、超えたらスクロール）
     rows = 1
     if use_stack and n > 0:
         rows = (n + max_per_row - 1) // max_per_row
-        # リミッター例：最大3段に制限（それ以上はスクロールで見せる）
         rows = min(rows, 3)
 
-    # コンテナの最低高さを調整
+    # 高さ確保（段が増えたら増やす）
     if use_stack:
-        # 240はカード高さに近い値。段が増えたら増やす
         your_hand.style.minHeight = f"{240 + (rows - 1) * step_y}px"
     else:
         your_hand.style.minHeight = "240px"
 
-    # 実配置
-    for idx, c in enumerate(card_ids):
-        im = img_el(_cards.getUrl(c), "hand-card")
-        im.dataset.cardId = str(c)
+    # 出せる/出せないの判定（表示用）
+    playable = set()
+    if field is not None:
+        for c in you:
+            if can_play(c, field):
+                playable.add(c)
 
-        # 出せる/出せない表示（判定は維持）
-        if field is not None and not can_play(c, field):
+    for idx, cid in enumerate(card_ids):
+        im = img_el(_cards.getUrl(cid), "hand-card")
+        im.dataset.cardId = str(cid)
+
+        if field is not None and cid not in playable:
             im.classList.add("disabled")
 
-        # クリックで場に出す
+        # クリック handler（proxyで保持）
         def make_onclick(card_id):
-            async def _run():
-                await play_card(card_id)
-
             def _onclick(evt):
-                asyncio.create_task(_run())
-
+                asyncio.create_task(play_card(card_id))
             return _onclick
 
-        handler = create_proxy(make_onclick(c))
-        event_proxies.append(handler)          # ★保持して破棄されないように
+        handler = create_proxy(make_onclick(cid))
+        event_proxies.append(handler)
         im.addEventListener("click", handler)
 
-
         if not use_stack:
-            # 通常：流し込み（position指定しない）
+            # 通常：流し込み
             im.style.position = "static"
         else:
-            # 重ね表示：絶対配置
-            im.classList.add("stack")
+            # 重ね：必ず r/cidx を先に作ってから使う（★ここが重要）
             r = idx // max_per_row
             cidx = idx % max_per_row
 
-            # リミッター（3段まで）を超えたら、最後の段に詰める
+            # 3段超は3段目に詰める（スクロール前提）
             if r >= 3:
                 r = 2
 
             left = cidx * step_x
-            top = r * step_y
+            top = base_top + r * step_y
+
+            im.classList.add("stack")
             im.style.left = f"{left}px"
             im.style.top = f"{top}px"
             im.style.zIndex = str(idx)
