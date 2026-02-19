@@ -147,65 +147,54 @@
 /* ===== iPad横向き専用レイアウト ===== */
 @media (hover: none) and (pointer: coarse) and (orientation: landscape) {
 
-  /* ===== 全体レイアウト ===== */
+  /* 余白を少し詰める（横切れ防止に効く） */
+  body { padding: 10px; }
+
+  /* ===== 全体：CPU（上）→ 場+山（中） ===== */
   .layout{
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); /* ★はみ出し防止 */
     grid-template-areas:
-      "left   left"      /* 上段：CPU3人 */
-      "center right";    /* 中段：場 と 山 */
-    gap: 14px;
+      "left   left"      /* 1段目：CPU */
+      "center right";    /* 2段目：場 と 山 */
+    gap: 10px;           /* ★少し詰める */
+    align-items: start;
+    max-width: 100%;
   }
 
-  /* layout内の3ブロック割当 */
-  .layout > div:nth-child(1){ grid-area: left; }
-  .layout > div:nth-child(2){ grid-area: center; }
-  .layout > div:nth-child(3){ grid-area: right; }
+  /* .layoutの子要素は 1=CPU, 2=場, 3=山 */
+  .layout > div:nth-child(1){ grid-area: left; min-width: 0; }
+  .layout > div:nth-child(2){ grid-area: center; min-width: 0; }
+  .layout > div:nth-child(3){ grid-area: right;  min-width: 0; }
 
-  /* ===== CPUエリア：横並び3列 ===== */
+  /* ===== CPU：横並び3列（裏1枚＋枚数） ===== */
   .layout > div:nth-child(1){
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 10px;
   }
 
-  .cpu-box{
-    padding: 10px;
-    margin-bottom: 0;
-  }
+  .cpu-box{ padding: 10px; margin-bottom: 0; }
+  .cpu-title{ font-size: 16px; margin-bottom: 6px; white-space: nowrap; text-align: center; }
+  .mini-row{ justify-content: center; }
+  .mini-row img{ width: 64px; height: auto; } /* 1枚だけ見せる用 */
 
-  .cpu-title{
-    font-size: 16px;
-    margin-bottom: 6px;
-    white-space: nowrap;
-    text-align: center;
-  }
-
-  /* 裏カード1枚だけ大きめ表示 */
-  .mini-row{
-    justify-content: center;
-  }
-
-  .mini-row img{
-    width: 68px;
-  }
-
-  /* ===== 場札 ===== */
+  /* ===== 場札：ここを小さくする（切れ防止の本丸） ===== */
   .field-frame{
-    width: 220px;
-    height: 300px;
+    width: 240px;   /* ★小さめ */
+    height: 310px;  /* ★小さめ */
+    margin: 0 auto;
   }
-
   .field-frame img{
-    width: 180px;
+    width: 200px;   /* ★カード画像幅 */
   }
 
-  /* ===== 山札 ===== */
+  /* ===== 山札：ここも小さく ===== */
   .deck-card{
-    width: 160px;
+    width: 180px;   /* ★山札画像幅 */
   }
 
-  /* ===== 手札（最下段） ===== */
+  /* ===== 手札：横スワイプ専用 ===== */
   .hand-frame{
     overflow-x: auto;
     overflow-y: hidden;
@@ -213,31 +202,17 @@
     touch-action: pan-x;
   }
 
-  /* iPadではhoverを無効化 */
-  .hand-card:hover{
-    transform: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,.12);
-  }
-
-  /* タップ選択時だけ浮かす */
+  /* iPadはhoverを使わない（selectedだけ浮かす） */
+  .hand-card:hover{ transform: none; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
   .hand-card.selected{
     transform: translateY(-22px);
     outline: 4px solid rgba(0,120,255,.35);
     z-index: 999 !important;
   }
 
-  /* 重ね表示時は影を消す（見やすさ向上） */
-  .hand-card.stack{
-    box-shadow: none;
-  }
-
-  /* disabledは透明にしない（重なりで濁るのを防ぐ） */
-  .hand-card.disabled{
-    opacity: 1;
-    outline: 3px solid rgba(0,0,0,.12);
-  }
+  /* 重ね表示時は影を消して濁りを防ぐ */
+  .hand-card.stack{ box-shadow: none; }
 }
-
 
 /* ====== マウス環境だけ hover を効かせる ====== */
 @media (hover: hover) and (pointer: fine) {
