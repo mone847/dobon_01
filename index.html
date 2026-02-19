@@ -147,54 +147,48 @@
 /* ===== iPad横向き専用レイアウト ===== */
 @media (hover: none) and (pointer: coarse) and (orientation: landscape) {
 
-  /* 余白を少し詰める（横切れ防止に効く） */
+  /* iPadでは少し詰める（ただしスクロールは殺さない） */
   body { padding: 10px; }
 
-  /* ===== 全体：CPU（上）→ 場+山（中） ===== */
+  /* ===== 1段目：CPU・場・山 を1列（3カラム） ===== */
   .layout{
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); /* ★はみ出し防止 */
-    grid-template-areas:
-      "left   left"      /* 1段目：CPU */
-      "center right";    /* 2段目：場 と 山 */
-    gap: 10px;           /* ★少し詰める */
-    align-items: start;
-    max-width: 100%;
-  }
-
-  /* .layoutの子要素は 1=CPU, 2=場, 3=山 */
-  .layout > div:nth-child(1){ grid-area: left; min-width: 0; }
-  .layout > div:nth-child(2){ grid-area: center; min-width: 0; }
-  .layout > div:nth-child(3){ grid-area: right;  min-width: 0; }
-
-  /* ===== CPU：横並び3列（裏1枚＋枚数） ===== */
-  .layout > div:nth-child(1){
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) 220px 180px; /* 左=CPU / 中=場 / 右=山 */
     gap: 10px;
+    align-items: start;
   }
 
-  .cpu-box{ padding: 10px; margin-bottom: 0; }
-  .cpu-title{ font-size: 16px; margin-bottom: 6px; white-space: nowrap; text-align: center; }
-  .mini-row{ justify-content: center; }
-  .mini-row img{ width: 64px; height: auto; } /* 1枚だけ見せる用 */
+  /* ===== CPU：縦3行 ===== */
+.layout > div:nth-child(1){
+  display: flex;
+  flex-direction: column;   /* ★縦に積む */
+  gap: 10px;
+}
 
-  /* ===== 場札：ここを小さくする（切れ防止の本丸） ===== */
+
+  .cpu-box{ padding: 6px; margin-bottom: 0; }
+
+  .cpu-title{
+    font-size: 14px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .mini-row{ justify-content: center; }
+  .mini-row img{ width: 56px; height: auto; }
+
+  /* ===== 場札 ===== */
   .field-frame{
-    width: 240px;   /* ★小さめ */
-    height: 310px;  /* ★小さめ */
+    width: 200px;
+    height: 280px;
     margin: 0 auto;
   }
-  .field-frame img{
-    width: 200px;   /* ★カード画像幅 */
-  }
+  .field-frame img{ width: 180px; }
 
-  /* ===== 山札：ここも小さく ===== */
-  .deck-card{
-    width: 180px;   /* ★山札画像幅 */
-  }
+  /* ===== 山札 ===== */
+  .deck-card{ width: 160px; }
 
-  /* ===== 手札：横スワイプ専用 ===== */
+  /* ===== 手札：横スワイプ専用（ページスクロールは生かす） ===== */
   .hand-frame{
     overflow-x: auto;
     overflow-y: hidden;
@@ -212,46 +206,9 @@
 
   /* 重ね表示時は影を消して濁りを防ぐ */
   .hand-card.stack{ box-shadow: none; }
-  /* ===== 縦に伸びないように、画面内に収める ===== */
-  html, body{
-    height: 100%;
-  }
-
-  /* iOS Safariは100vhがズレることがあるのでdvhも併用 */
-  body{
-    height: 100dvh;
-    overflow: hidden;     /* ★ページ自体は伸ばさない */
-    padding: 8px;         /* ★縦を稼ぐ */
-  }
-
-  h1{
-    font-size: 18px;      /* ★縦を稼ぐ */
-    margin: 0 0 6px 0;
-  }
-
-  /* 上2段（CPU＋場山）の高さを取りすぎない */
-  .cpu-title{ font-size: 15px; margin-bottom: 4px; }
-  .cpu-box{ padding: 8px; }
-
-  /* 場・山を少しだけ詰める（縦を稼ぐ） */
-  .field-frame{ height: 280px; }  /* 310→280 など */
-  /* ※ width/画像幅はそのままでもOK */
-
-  /* 手札エリアを“画面下に固定”して、そこだけスクロールさせる */
-  .hand-area{
-    margin-top: 8px;
-  }
-
-  .hand-frame{
-    /* ここが重要：手札枠の高さを固定し、内部で見せる */
-    max-height: 34dvh;    /* ★手札に割り当てる高さ（調整ポイント） */
-    overflow-x: auto;
-    overflow-y: hidden;   /* 縦スクロールは不要ならhidden */
-    touch-action: pan-x;
-    -webkit-overflow-scrolling: touch;
-  }
-
 }
+
+
 
 /* ====== マウス環境だけ hover を効かせる ====== */
 @media (hover: hover) and (pointer: fine) {
