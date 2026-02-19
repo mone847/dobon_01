@@ -41,6 +41,8 @@ cpuA = []
 cpuB = []
 cpuC = []
 
+selected = None  # iPad向け：選択中カードid（1回目タップで選択）
+
 busy = False
 
 # ---- 重要：カード番号→(スート,数字)の割り当て ----
@@ -186,6 +188,9 @@ def render_hand():
         im = img_el(_cards.getUrl(cid), "hand-card")
         im.dataset.cardId = str(cid)
 
+        if selected == cid:
+            im.classList.add("selected")
+
         if field is not None and cid not in playable:
             im.classList.add("disabled")
 
@@ -269,6 +274,18 @@ async def reset_async():
     finally:
         busy = False
 
+async def tap_card(card_id: int):
+    global selected
+
+    # 1回目：選択
+    if selected != card_id:
+        selected = card_id
+        render_hand()  # 選択表示だけ更新（全体render_allでもOK）
+        return
+
+    # 2回目：同じカード→出す試行
+    await play_card(card_id)
+
 async def play_card(card_id: int):
     global field, busy
     if busy:
@@ -299,11 +316,8 @@ async def play_card(card_id: int):
         # 場に出す
         you.remove(card_id)
         field = card_id
-
-        # ★念のため場札だけ先に更新（render_allの中でも更新されます）
-        render_field()
-
-        set_msg("場に出しました。次の手を選んでください。\n（今回はテストのため、出せても山札を取れます）", ok=True)
+        selected = None
+        set_msg("場に出しました。", ok=True)
         render_all()
 
     finally:
@@ -327,6 +341,7 @@ async def draw_from_deck():
 
         c = deck.pop()
         you.append(c)
+        selected = None
         set_msg("山札から1枚取りました。", ok=True)
         render_all()
 
