@@ -100,12 +100,16 @@ def img_el(src: str, cls: str = ""):
     return im
 
 def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
+    # タイトルに枚数を表示
     panel_title_el.innerText = f"{name}（{len(cards_list)}枚）"
+
     clear_node(panel_cards_el)
-    # CPUは裏面だけ並べる（枚数分）
-    back = _cards.getUrl(0)
-    for _ in cards_list:
+
+    # 裏カードは「1枚だけ」表示（0枚なら表示しない）
+    if len(cards_list) > 0:
+        back = _cards.getUrl(0)
         panel_cards_el.appendChild(img_el(back))
+
 
 def render_deck():
     deck_title.innerText = f"山のカード（{len(deck)}枚）"
