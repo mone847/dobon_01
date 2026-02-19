@@ -310,7 +310,7 @@ async def play_card(card_id: int):
             return
 
         if not can_play(card_id, field):
-            set_msg("そのカードは場に出せません。\n（同じマーク または 同じ数字 ではありません）", ng=True)
+            set_msg("そのカードは場に出せません。\n（同じマーク または 同じ数字）", ng=True)
             return
 
         # 場に出す
