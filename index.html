@@ -74,6 +74,9 @@
   position: relative;          /* ★重ね表示の土台 */
   min-height: 240px;           /* ★カードを重ねても高さ確保 */
   overflow: auto;              /* ★はみ出たらスクロール（リミッター） */
+  overflow-y:hidden;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
   background: #fff;
 }
 
@@ -92,6 +95,7 @@
 /* ★重ね表示モードのときは absolute で配置する（Python側で設定） */
 .hand-card.stack{
   position: absolute;
+  box-shadow: none;
 }
 
 /* ★ホバーで“少し持ち上がる”＋最前面に */
@@ -103,7 +107,8 @@
 
 /* 出せないカードの見た目（今回は「取る」優先なので残すだけ） */
 .hand-card.disabled{
-  opacity: .55;
+  opacity: 1;
+  outline: 3px solid rgba(0,0,0,.12);
 }
 
 /* 山札：ホバー＋クリック */
@@ -137,6 +142,61 @@
       .deck-card { width: 200px; }
       .hand-card { width: 120px; }
     }
+  /* ====== iPad(横)向け：2段レイアウト（上：場＆山、下：CPU） ====== */
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) {
+  .layout{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "center right"
+      "left   left";
+    gap: 14px;
+  }
+
+  /* .layoutの子要素は 1=CPU, 2=場, 3=山 の順なので、grid-areaを割り当てる */
+  .layout > div:nth-child(1){ grid-area: left; }
+  .layout > div:nth-child(2){ grid-area: center; }
+  .layout > div:nth-child(3){ grid-area: right; }
+
+  /* 場札と山札は少し大きめに */
+  .field-frame{ width: 320px; height: 410px; }
+  .field-frame img{ width: 280px; }
+  .deck-card{ width: 220px; }
+
+  /* CPUの裏カードは小さめ・横に流しやすく */
+  .mini-row img{ width: 44px; }
+
+  /* 手札エリア：横スワイプ専用（縦スクロールを殺す） */
+  .hand-frame{
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;     /* ★横スワイプ優先 */
+  }
+
+  /* iPadはホバーがないので hover で持ち上げない */
+  .hand-card:hover{
+    transform: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,.12);
+  }
+
+  /* 選択されたカードだけ持ち上げる（タップ1回目） */
+  .hand-card.selected{
+    transform: translateY(-22px);
+    outline: 4px solid rgba(0,120,255,.35);
+    z-index: 999 !important;
+  }
+}
+
+/* ====== マウス環境だけ hover を効かせる ====== */
+@media (hover: hover) and (pointer: fine) {
+  .hand-card:hover{
+    transform: translateY(-22px);
+    box-shadow: 0 12px 18px rgba(0,0,0,.18);
+    z-index: 999 !important;
+  }
+}
+  
   </style>
 </head>
 
