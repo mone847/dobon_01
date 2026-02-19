@@ -148,7 +148,7 @@
 @media (hover: none) and (pointer: coarse) and (orientation: landscape) {
 
   /* 余白を少し詰める（横切れ防止に効く） */
-  body { padding: 10px; background: #ffeeee !important; }
+  body { padding: 10px; }
 
   /* ===== 全体：CPU（上）→ 場+山（中） ===== */
   .layout{
@@ -212,6 +212,45 @@
 
   /* 重ね表示時は影を消して濁りを防ぐ */
   .hand-card.stack{ box-shadow: none; }
+  /* ===== 縦に伸びないように、画面内に収める ===== */
+  html, body{
+    height: 100%;
+  }
+
+  /* iOS Safariは100vhがズレることがあるのでdvhも併用 */
+  body{
+    height: 100dvh;
+    overflow: hidden;     /* ★ページ自体は伸ばさない */
+    padding: 8px;         /* ★縦を稼ぐ */
+  }
+
+  h1{
+    font-size: 18px;      /* ★縦を稼ぐ */
+    margin: 0 0 6px 0;
+  }
+
+  /* 上2段（CPU＋場山）の高さを取りすぎない */
+  .cpu-title{ font-size: 15px; margin-bottom: 4px; }
+  .cpu-box{ padding: 8px; }
+
+  /* 場・山を少しだけ詰める（縦を稼ぐ） */
+  .field-frame{ height: 280px; }  /* 310→280 など */
+  /* ※ width/画像幅はそのままでもOK */
+
+  /* 手札エリアを“画面下に固定”して、そこだけスクロールさせる */
+  .hand-area{
+    margin-top: 8px;
+  }
+
+  .hand-frame{
+    /* ここが重要：手札枠の高さを固定し、内部で見せる */
+    max-height: 34dvh;    /* ★手札に割り当てる高さ（調整ポイント） */
+    overflow-x: auto;
+    overflow-y: hidden;   /* 縦スクロールは不要ならhidden */
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+
 }
 
 /* ====== マウス環境だけ hover を効かせる ====== */
