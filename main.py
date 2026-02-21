@@ -130,7 +130,7 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
 
     panel_cards_el.style.position = "relative"
     if use_stack:
-        panel_cards_el.style.minHeight = "72px"
+        panel_cards_el.style.minHeight = "78px"
     else:
         panel_cards_el.style.minHeight = "70px"
 
