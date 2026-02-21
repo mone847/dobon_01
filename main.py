@@ -303,7 +303,7 @@ async def reset_async():
 
         # 5枚ずつ配る
         you = [deck.pop() for _ in range(5)]
-        cpuA = [deck.pop() for _ in range(5)]
+        cpuA = [deck.pop() for _ in range(18)]
         cpuB = [deck.pop() for _ in range(5)]
         cpuC = [deck.pop() for _ in range(5)]
 
