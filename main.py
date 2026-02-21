@@ -125,7 +125,7 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
     # stack 用パラメータ
     step_x = 16   # 横の重なり（小さいほど “ぎゅっ” と重なる）
     step_y = 16   # 2段目のずらし
-    base_top = 2
+    base_top = 10  # 上余白（重ね表示のときはホバーで上がっても切れないように）
 
     if use_stack:
         # 1行に置ける枚数（重ね表示）
