@@ -265,7 +265,7 @@ async def reset_async():
         field_img.src = _cards.getUrl(field)
         deck_img.src = _cards.getUrl(0)
 
-        set_msg("配布しました。\n同じマーク or 同じ数字のカードをクリックして場に出してください。\n出せるカードが無いときは山札をクリックして1枚取ります。", ok=True)
+        set_msg("配布しました。\n同じマーク or 同じ数字を場に出す。\n出せるカードが無いときは山から1枚取る。", ok=True)
         render_all()
 
         # 山札クリック
@@ -310,7 +310,7 @@ async def play_card(card_id: int):
             if total == target:
                 set_msg("手札が1枚です。カードは出さずに「ドボン！」を押してください。", ok=True)
             else:
-                set_msg("手札が1枚のときはドボンでのみ上がれる。\nドボンできないので山から1枚取る。", ng=True)
+                set_msg("手札が1枚→ドボンのみ上がり。\nドボンできないので山から1枚取る。", ng=True)
             return
 
         if not can_play(card_id, field):
@@ -340,7 +340,7 @@ async def draw_from_deck():
 
         # ★出せるカードがあるなら引けない
         if has_playable():
-            set_msg("出せるカードがあります。まず手札から場に出してください。", ng=True)
+            set_msg("出せるカードがあります。→手札から場に出す。", ng=True)
             return
 
         c = deck.pop()
