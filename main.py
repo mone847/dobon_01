@@ -45,9 +45,8 @@ selected = None  # iPad向け：選択中カードid（1回目タップで選択
 
 busy = False
 
-# ---- 重要：カード番号→(スート,数字)の割り当て ----
-# c1..c52 の並びを「♣→♦→♥→♠（各A..K）」と仮定。
-# もし画像の実並びが違うなら、ここだけ直せばルール判定が合います。
+# ---- カード番号→(スート,数字)の割り当て ----
+# c1..c52 の並びは「♣→♦→♥→♠（各A..K）」
 def card_to_suit_rank(i: int):
     suit_index = (i - 1) // 13  # 0..3
     rank = (i - 1) % 13 + 1     # 1..13
@@ -101,14 +100,65 @@ def img_el(src: str, cls: str = ""):
 
 def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
     # タイトルに枚数を表示
-    panel_title_el.innerText = f"{name}（{len(cards_list)}枚）"
+    n = len(cards_list)
+    panel_title_el.innerText = f"{name}（{n}枚）"
 
     clear_node(panel_cards_el)
 
-    # 裏カードは「1枚だけ」表示（0枚なら表示しない）
-    if len(cards_list) > 0:
-        back = _cards.getUrl(0)
-        panel_cards_el.appendChild(img_el(back))
+    if n <= 0:
+        panel_cards_el.style.minHeight = "70px"
+        return
+
+    back = _cards.getUrl(0)
+
+    # コンテナ幅（0になる環境対策で最低値を入れる）
+    w = int(panel_cards_el.clientWidth) if panel_cards_el.clientWidth else 260
+    avail = max(120, w - 8)
+
+    # CPUカードは小さめ（CSS側の幅と合わせる）
+    card_w = 56 if w < 240 else 52   # 雑に iPad寄りを考慮（必要なら固定でもOK）
+    gap = 10
+
+    total_normal = n * card_w + max(0, n - 1) * gap
+    use_stack = total_normal > avail
+
+    # stack 用パラメータ
+    step_x = 16   # 横の重なり（小さいほど “ぎゅっ” と重なる）
+    step_y = 16   # 2段目のずらし
+    base_top = 2
+
+    if use_stack:
+        # 1行に置ける枚数（重ね表示）
+        max_per_row = max(1, int((avail - card_w) // step_x) + 1)
+        max_per_row = min(max_per_row, 16)
+
+        rows = (n + max_per_row - 1) // max_per_row
+        rows = min(rows, 2)  # CPUは最大2段くらいで十分（好みで3にしてOK）
+
+        # 高さ確保
+        panel_cards_el.style.minHeight = f"{70 + (rows - 1) * step_y}px"
+    else:
+        panel_cards_el.style.minHeight = "70px"
+
+    for idx in range(n):
+        im = img_el(back, "cpu-card")
+
+        if use_stack:
+            r = idx // max_per_row
+            cidx = idx % max_per_row
+            if r >= 2:
+                r = 1
+                cidx = min(cidx, max_per_row - 1)
+
+            left = cidx * step_x
+            top = base_top + r * step_y
+
+            im.classList.add("stack")
+            im.style.left = f"{left}px"
+            im.style.top = f"{top}px"
+            im.style.zIndex = str(idx)
+
+        panel_cards_el.appendChild(im)
 
 
 def render_deck():
