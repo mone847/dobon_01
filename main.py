@@ -40,6 +40,7 @@ you = []        # あなたの手札（表で見える）
 cpuA = []
 cpuB = []
 cpuC = []
+discard=[]       # 捨て札
 
 selected = None  # iPad向け：選択中カードid（1回目タップで選択）
 
@@ -296,7 +297,7 @@ def render_all():
 
 # ===== Actions =====
 async def reset_async():
-    global deck, field, you, cpuA, cpuB, cpuC, busy
+    global deck, field, discard, you, cpuA, cpuB, cpuC, busy
     if busy:
         return
     busy = True
@@ -306,6 +307,8 @@ async def reset_async():
         # シャッフル
         deck = list(range(1, 53))
         random.shuffle(deck)
+        # ★ここで discard をクリア
+        discard = []
 
         # 5枚ずつ配る
         you = [deck.pop() for _ in range(5)]
@@ -320,7 +323,7 @@ async def reset_async():
         field_img.src = _cards.getUrl(field)
         deck_img.src = _cards.getUrl(0)
 
-        set_msg("配布しました。\n同じマーク or 同じ数字を場に出す。\n出せるカードが無いときは山から1枚取る。", ok=True)
+        set_msg("配布完了。同じマーク or 同じ数字\n出せるカードが無い→山から取る。", ok=True)
         render_all()
 
         # 山札クリック
@@ -374,6 +377,11 @@ async def play_card(card_id: int):
 
         # 場に出す
         you.remove(card_id)
+
+        # いまの場札を捨て札へ
+        if field is not None:
+            discard.append(field)
+        # 新しい場札へ
         field = card_id
         selected = None
         set_msg("場に出しました。", ok=True)
@@ -384,13 +392,16 @@ async def play_card(card_id: int):
 
 
 async def draw_from_deck():
-    global busy
+    global busy, selected
     if busy:
         return
     busy = True
     try:
+        # ★まず補充を試す
+        refill_deck_if_empty()
+
         if len(deck) == 0:
-            set_msg("山札がありません。", ng=True)
+            set_msg("山札も捨て札もありません。", ng=True)
             return
 
         # ★出せるカードがあるなら引けない
@@ -471,6 +482,21 @@ def can_dobon():
         total += rank
 
     return total == field_rank
+
+def refill_deck_if_empty():
+    """山札が空なら、場の一番上(field)だけ残して discard をシャッフルして山に戻す"""
+    global deck, discard, field
+
+    if len(deck) > 0:
+        return
+
+    # discard が無ければ補充できない
+    if len(discard) == 0:
+        return
+
+    random.shuffle(discard)
+    deck = discard[:]   # 山札に戻す
+    discard = []        # 捨て札は空に
 
 # ===== PyScript entry points =====
 def reset_game(event=None):
