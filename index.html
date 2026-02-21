@@ -88,43 +88,43 @@
     .deck-card.disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
 
     /* 下：あなたの手札 */
-.hand-frame{
-  border: 1px solid #999;
-  border-radius: 10px;
-  padding: 38px;
-  position: relative;          /* ★重ね表示の土台 */
-  min-height: 260px;           /* ★カードを重ねても高さ確保 */
-  overflow: auto;              /* ★はみ出たらスクロール（リミッター） */
-  overflow-y:hidden;
-  touch-action: pan-x;
-  -webkit-overflow-scrolling: touch;
-  background: #fff;
-}
+    .hand-frame{
+      border: 1px solid #999;
+      border-radius: 10px;
+      padding: 38px;
+      position: relative;          /* ★重ね表示の土台 */
+      min-height: 260px;           /* ★カードを重ねても高さ確保 */
+      overflow: auto;              /* ★はみ出たらスクロール（リミッター） */
+      overflow-y:hidden;
+      touch-action: pan-x;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+    }
 
-/* 手札カード（通常でも重ねでも共通） */
-.hand-card{
-  width: 140px;
-  height: auto;
-  border-radius: 14px;
-  cursor: pointer;
-  user-select: none;
-  transition: transform .12s ease, box-shadow .12s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,.12);
-  background: #fff;
-}
+    /* 手札カード（通常でも重ねでも共通） */
+  .hand-card{
+    width: 140px;
+    height: auto;
+    border-radius: 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform .12s ease, box-shadow .12s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,.12);
+    background: #fff;
+  }
 
-/* ★重ね表示モードのときは absolute で配置する（Python側で設定） */
-.hand-card.stack{
-  position: absolute;
-  box-shadow: none;
-}
+  /* ★重ね表示モードのときは absolute で配置する（Python側で設定） */
+  .hand-card.stack{
+    position: absolute;
+    box-shadow: none;
+  }
 
 /* ★ホバーで“少し持ち上がる”＋最前面に */
-.hand-card:hover{
-  transform: translateY(-20px);
-  box-shadow: 0 12px 18px rgba(0,0,0,.18);
-  z-index: 999 !important;
-}
+  .hand-card:hover{
+    transform: translateY(-20px);
+    box-shadow: 0 12px 18px rgba(0,0,0,.18);
+    z-index: 999 !important;
+  }
 
 /* 出せないカードの見た目（今回は「取る」優先なので残すだけ） */
 .hand-card.disabled{
@@ -178,13 +178,13 @@
   }
 
   /* ===== CPU：縦3行 ===== */
-.layout > div:nth-child(1){
-  display: flex;
-  flex-direction: column;   /* ★縦に積む */
-  gap: 10px;
-}
+  .layout > div:nth-child(1){
+    display: flex;
+    flex-direction: column;   /* ★縦に積む */
+    gap: 10px;
+  }
 
-.cpu-box{ padding: 6px; margin-bottom: 0; }
+  .cpu-box{ padding: 6px; margin-bottom: 0; }
 
   .cpu-title{
     font-size: 14px;
