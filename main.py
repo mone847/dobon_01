@@ -384,7 +384,7 @@ async def play_card(card_id: int):
         # 新しい場札へ
         field = card_id
         selected = None
-        set_msg("場に出しました。", ok=True)
+        set_msg("場に出しました。\n", ok=True)
         render_all()
 
     finally:
@@ -406,13 +406,13 @@ async def draw_from_deck():
 
         # ★出せるカードがあるなら引けない
         if has_playable():
-            set_msg("出せるカードがあります。→手札から場に出す。", ng=True)
+            set_msg("出せるカードあり。→手札から出す。", ng=True)
             return
 
         c = deck.pop()
         you.append(c)
         selected = None
-        set_msg("山札から1枚取りました。", ok=True)
+        set_msg("山札から1枚取りました。\n", ok=True)
         render_all()
 
     finally:
