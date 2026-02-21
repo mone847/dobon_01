@@ -93,7 +93,7 @@
   border-radius: 10px;
   padding: 38px;
   position: relative;          /* ★重ね表示の土台 */
-  min-height: 240px;           /* ★カードを重ねても高さ確保 */
+  min-height: 260px;           /* ★カードを重ねても高さ確保 */
   overflow: auto;              /* ★はみ出たらスクロール（リミッター） */
   overflow-y:hidden;
   touch-action: pan-x;
@@ -121,7 +121,7 @@
 
 /* ★ホバーで“少し持ち上がる”＋最前面に */
 .hand-card:hover{
-  transform: translateY(-22px);
+  transform: translateY(-20px);
   box-shadow: 0 12px 18px rgba(0,0,0,.18);
   z-index: 999 !important;
 }
