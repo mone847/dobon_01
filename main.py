@@ -119,38 +119,20 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
     card_w = 56 if w < 240 else 52   # 雑に iPad寄りを考慮（必要なら固定でもOK）
     gap = 10
 
-    total_normal = n * card_w + max(0, n - 1) * gap
-    use_stack = total_normal > avail
+    use_stack = True
 
     # stack 用パラメータ
-    step_x = 16   # 横の重なり（小さいほど “ぎゅっ” と重なる）
-    step_y = 16   # 2段目のずらし
+    step_x = 18   # 横の重なり（小さいほど “ぎゅっ” と重なる）
+    
     base_top = 2 
-    if use_stack:
-        # 1行に置ける枚数（重ね表示）
-        max_per_row = max(1, int((avail - card_w) // step_x) + 1)
-        max_per_row = min(max_per_row, 16)
-
-        rows = (n + max_per_row - 1) // max_per_row
-        rows = min(rows, 2)  # CPUは最大2段くらいで十分（好みで3にしてOK）
-
-        # 高さ確保
-        panel_cards_el.style.minHeight = f"{70 + (rows - 1) * step_y}px"
-    else:
-        panel_cards_el.style.minHeight = "70px"
+    panel_cards_el.style.minHeight = "70px"
 
     for idx in range(n):
         im = img_el(back, "cpu-card")
 
         if use_stack:
-            r = idx // max_per_row
-            cidx = idx % max_per_row
-            if r >= 2:
-                r = 1
-                cidx = min(cidx, max_per_row - 1)
-
-            left = cidx * step_x
-            top = base_top + r * step_y
+            left = idx * step_x
+            top = base_top   # ★常に1段目
 
             im.classList.add("stack")
             im.style.left = f"{left}px"
@@ -303,7 +285,7 @@ async def reset_async():
 
         # 5枚ずつ配る
         you = [deck.pop() for _ in range(5)]
-        cpuA = [deck.pop() for _ in range(18)]
+        cpuA = [deck.pop() for _ in range(18)] #テスト用
         cpuB = [deck.pop() for _ in range(5)]
         cpuC = [deck.pop() for _ in range(5)]
 
