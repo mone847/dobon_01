@@ -99,7 +99,7 @@ def img_el(src: str, cls: str = ""):
     return im
 
 def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
-    # タイトルに枚数を表示
+    # ===== タイトル =====
     n = len(cards_list)
     panel_title_el.innerText = f"{name}（{n}枚）"
 
@@ -111,33 +111,49 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
 
     back = _cards.getUrl(0)
 
-    # コンテナ幅（0になる環境対策で最低値を入れる）
+    # ===== コンテナ幅 =====
     w = int(panel_cards_el.clientWidth) if panel_cards_el.clientWidth else 260
     avail = max(120, w - 8)
 
-    # CPUカードは小さめ（CSS側の幅と合わせる）
-    card_w = 56 if w < 240 else 52   # 雑に iPad寄りを考慮（必要なら固定でもOK）
+    card_w = 52
     gap = 10
 
-    use_stack = True
+    total_normal = n * card_w + max(0, n - 1) * gap
 
-    # stack 用パラメータ
-    step_x = 18   # 横の重なり（小さいほど “ぎゅっ” と重なる）
-    
-    base_top = 2 
+    THRESHOLD = 8  # 8枚までは通常表示
+
+    # ===== 通常表示かstackか判定 =====
+    if n <= THRESHOLD and total_normal <= avail:
+        use_stack = False
+    else:
+        use_stack = True
+
+    panel_cards_el.style.position = "relative"
     panel_cards_el.style.minHeight = "70px"
 
+    # ===== 描画 =====
     for idx in range(n):
         im = img_el(back, "cpu-card")
 
         if use_stack:
+            # 自動 step_x 計算
+            if n == 1:
+                step_x = 0
+            else:
+                # 「最後のカードが右端に来る」ように計算
+                step_x = (avail - card_w) / (n - 1)
+                step_x = max(6, min(18, step_x))  # 最小6px、最大18pxに制限
+
             left = idx * step_x
-            top = base_top   # ★常に1段目
+            top = 2
 
             im.classList.add("stack")
             im.style.left = f"{left}px"
             im.style.top = f"{top}px"
             im.style.zIndex = str(idx)
+        else:
+            im.classList.remove("stack")
+            im.style.position = "static"
 
         panel_cards_el.appendChild(im)
 
