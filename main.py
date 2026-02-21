@@ -125,8 +125,7 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
     # stack 用パラメータ
     step_x = 16   # 横の重なり（小さいほど “ぎゅっ” と重なる）
     step_y = 16   # 2段目のずらし
-    base_top = 10  # 上余白（重ね表示のときはホバーで上がっても切れないように）
-
+    base_top = 2 
     if use_stack:
         # 1行に置ける枚数（重ね表示）
         max_per_row = max(1, int((avail - card_w) // step_x) + 1)
@@ -210,7 +209,7 @@ def render_hand():
     # 重ね表示のパラメータ
     step_x = 34
     step_y = 42
-    base_top = 10
+    base_top = 20 # 通常は38pxの半分くらい、重ねは70pxの半分くらい（好みで調整OK）
 
     # 1行に置ける枚数（重ね表示時）
     if use_stack:
