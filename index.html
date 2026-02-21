@@ -31,16 +31,37 @@
       margin-bottom: 12px;
     }
     .cpu-title { font-weight: 800; margin-bottom: 10px; }
-    .mini-row { display: flex; gap: 10px; flex-wrap: wrap; }
-    .mini-row img { width: 52px; height: auto; }
-
+    
+    /* CPUカード表示エリア */
+    .mini-row{
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    position: relative;     /* ★stack の土台 */
+    min-height: 70px;       /* ★重ねても高さ確保（必要なら調整） */
+    }
+    /* CPUの裏カード（通常表示） */
+    .cpu-card{
+    width: 52px;
+    height: auto;
+    border-radius: 8px;
+    background: #fff;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+    }
+    /* ★CPUの重ね表示 */
+    .cpu-card.stack{
+    position: absolute;
+    box-shadow: none;       /* 重なりの濁り軽減 */
+    }
+    
     /* 中央：場札 */
     .center { text-align: center; }
     .label { font-size: 22px; font-weight: 900; margin-bottom: 10px; }
 
     .field-frame {
-      width: 280px;
-      height: 360px;
+      width: 220px;
+      height: 280px;
       margin: 0 auto;
       border-radius: 26px;
       background: #2f5f78;
@@ -51,7 +72,7 @@
       justify-content:center;
       box-shadow: 0 4px 10px rgba(0,0,0,.15);
     }
-    .field-frame img { width: 240px; height: auto; border-radius: 14px; background:#fff; }
+    .field-frame img { width: 200px; height: auto; border-radius: 14px; background:#fff; }
 
     /* 右：山札 */
     .right { text-align:center; }
@@ -122,7 +143,6 @@
 .deck-card:hover{ transform: translateY(-6px); }
 .deck-card.disabled{ opacity:.45; cursor:not-allowed; transform:none !important; }
 
-
     /* メッセージ */
     #msg {
       margin-top: 10px;
@@ -142,7 +162,6 @@
       .deck-card { width: 200px; }
       .hand-card { width: 120px; }
     }
-
 
 /* ===== iPad横向き専用レイアウト ===== */
 @media (hover: none) and (pointer: coarse) and (orientation: landscape) {
@@ -165,8 +184,7 @@
   gap: 10px;
 }
 
-
-  .cpu-box{ padding: 6px; margin-bottom: 0; }
+.cpu-box{ padding: 6px; margin-bottom: 0; }
 
   .cpu-title{
     font-size: 14px;
@@ -175,7 +193,8 @@
     text-align: center;
   }
   .mini-row{ justify-content: center; }
-  .mini-row img{ width: 56px; height: auto; }
+  .cpu-card{ width: 56px; height:auto; }
+  .cpu-card.stack{ box-shadow: none; }
 
   /* ===== 場札 ===== */
   .field-frame{
@@ -207,7 +226,6 @@
   /* 重ね表示時は影を消して濁りを防ぐ */
   .hand-card.stack{ box-shadow: none; }
 }
-
 
 
 /* ====== マウス環境だけ hover を効かせる ====== */
