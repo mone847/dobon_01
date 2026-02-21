@@ -209,7 +209,7 @@ def render_hand():
     # 重ね表示のパラメータ
     step_x = 34
     step_y = 42
-    base_top = 20 # 通常は38pxの半分くらい、重ねは70pxの半分くらい（好みで調整OK）
+    base_top = 30
 
     # 1行に置ける枚数（重ね表示時）
     if use_stack:
@@ -226,7 +226,7 @@ def render_hand():
 
     # 高さ確保
     if use_stack:
-        your_hand.style.minHeight = f"{240 + (rows - 1) * step_y}px"
+        your_hand.style.minHeight = f"{260 + (rows - 1) * step_y}px"
     else:
         your_hand.style.minHeight = "240px"
 
