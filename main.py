@@ -288,6 +288,11 @@ def render_all():
     render_field()
     render_deck()
     render_hand()
+    dobon_btn = document.getElementById("dobon-btn")
+    if can_dobon():   # 判定関数
+        dobon_btn.classList.add("ready")
+    else:
+        dobon_btn.classList.remove("ready") 
 
 # ===== Actions =====
 async def reset_async():
@@ -304,9 +309,9 @@ async def reset_async():
 
         # 5枚ずつ配る
         you = [deck.pop() for _ in range(5)]
-        cpuA = [deck.pop() for _ in range(20)] #テスト用
-        cpuB = [deck.pop() for _ in range(8)]
-        cpuC = [deck.pop() for _ in range(9)]
+        cpuA = [deck.pop() for _ in range(5)]
+        cpuB = [deck.pop() for _ in range(5)]
+        cpuC = [deck.pop() for _ in range(5)]
 
         # 場に1枚（表）
         field = deck.pop()
@@ -447,6 +452,25 @@ async def try_dobon_async():
 def try_dobon(event=None):
     asyncio.create_task(try_dobon_async())
 
+def can_dobon():
+    # 手札が空なら不可
+    if not you:
+        return False
+
+    # 場のカードがなければ不可
+    if field is None:
+        return False
+
+    # 場の数字を取得（1～13）
+    field_rank = ((field - 1) % 13) + 1
+
+    # 手札の合計を計算
+    total = 0
+    for c in you:
+        rank = ((c - 1) % 13) + 1
+        total += rank
+
+    return total == field_rank
 
 # ===== PyScript entry points =====
 def reset_game(event=None):
