@@ -393,26 +393,35 @@ async def play_card(card_id: int):
 
 async def draw_from_deck():
     global busy, selected
+
     if busy:
         return
+
     busy = True
     try:
-        # ★まず補充を試す
-        refill_deck_if_empty()
+        # ===== 山札補充チェック =====
+        refilled = refill_deck_if_empty()
 
         if len(deck) == 0:
-            set_msg("山札も捨て札もありません。", ng=True)
+            set_msg("山札も捨て札もありません。\n", ng=True)
             return
 
-        # ★出せるカードがあるなら引けない
+        # ===== 出せるカードがあるなら引けない =====
         if has_playable():
-            set_msg("出せるカードあり。→手札から出す。", ng=True)
+            set_msg("出せるカードあり。→手札から出す。\n", ng=True)
             return
 
+        # ===== 山札から引く =====
         c = deck.pop()
         you.append(c)
         selected = None
-        set_msg("山札から1枚取りました。\n", ok=True)
+
+        # ===== メッセージ制御 =====
+        if refilled:
+            set_msg("山札を再構築しました。\n山札から1枚取りました。\n", ok=True)
+        else:
+            set_msg("山札から1枚取りました。\n", ok=True)
+
         render_all()
 
     finally:
@@ -487,18 +496,16 @@ def refill_deck_if_empty():
     global deck, discard, field
 
     if len(deck) > 0:
-        return
+        return False
 
     # discard が無ければ補充できない
     if len(discard) == 0:
-        return
+        return False
 
     random.shuffle(discard)
     deck = discard[:]   # 山札に戻す
     discard = []        # 捨て札は空に
-    set_msg(
-            "場のカードを山に戻しました。！\n"
-        )
+    return True
 
 # ===== PyScript entry points =====
 def reset_game(event=None):
