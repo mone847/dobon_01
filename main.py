@@ -42,9 +42,16 @@ cpuB = []
 cpuC = []
 discard=[]       # 捨て札
 
+TURN_ORDER = ["you", "cpuA", "cpuB", "cpuC"]
+current_player_idx = 0
+current_player = "you"
+game_over = False  # 勝敗がついたら True
+
 selected = None  # iPad向け：選択中カードid（1回目タップで選択）
 
 busy = False
+
+last_actor = None  # 最後に行動したプレーヤー
 
 # ---- カード番号→(スート,数字)の割り当て ----
 # c1..c52 の並びは「♣→♦→♥→♠（各A..K）」
@@ -352,7 +359,7 @@ async def tap_card(card_id: int):
     await play_card(card_id)
 
 async def play_card(card_id: int):
-    global field, busy
+    global field, busy, selected, last_actor
     if busy:
         return
     busy = True
@@ -387,15 +394,22 @@ async def play_card(card_id: int):
         # 新しい場札へ
         field = card_id
         selected = None
+
+        # ★追加：この手番で“行動した人”を記録
+        last_actor = "you"   # 将来CPU実装したら current_player で入れる
+
         set_msg("場に出しました。\n", ok=True)
         render_all()
+        # you が行動したので次へ
+        next_player()
+        asyncio.create_task(run_cpu_turns_until_you())
 
     finally:
         busy = False
 
 
 async def draw_from_deck():
-    global busy, selected
+    global busy, selected, last_actor
 
     if busy:
         return
@@ -419,6 +433,9 @@ async def draw_from_deck():
         you.append(c)
         selected = None
 
+        # ★追加：引いたのも“行動”なので記録（次にドボンされたらこの人が負け）
+        last_actor = "you"  # 将来CPU実装したら current_player で入れる
+
         # ===== メッセージ制御 =====
         if refilled:
             set_msg("山札を再構築しました。\n山札から1枚取りました。\n", ok=True)
@@ -426,6 +443,8 @@ async def draw_from_deck():
             set_msg("山札から1枚取りました。\n", ok=True)
 
         render_all()
+        next_player()
+        asyncio.create_task(run_cpu_turns_until_you())
 
     finally:
         busy = False
@@ -445,6 +464,14 @@ async def try_dobon_async():
     busy = True
     try:
         ok, used = dobon_possible()
+        if ok and last_actor == "you":
+            set_msg(
+            "ドボン・準備完了！\n"
+            "次の人の手番後に「ドボン！」できます。",
+            ng=True
+            )
+            return
+
         target = card_to_suit_rank(field)[1]
         total = sum(card_to_suit_rank(cid)[1] for cid in you)
 
@@ -456,12 +483,14 @@ async def try_dobon_async():
             )
             return
 
-        # 勝利
+        # 勝利（負けは last_actor）
+        loser = last_actor if last_actor is not None else "（不明）"
         set_msg(
-            "ドボン！ あなたの勝ち！\n"
-            f"手札の合計：{total} = 場の数字：{target}",
-            ok=True
-        )
+                "ドボン！ あなたの勝ち！\n"
+                f"手札の合計：{total} = 場の数字：{target}\n"
+                f"負け：{loser}",
+                ok=True
+            )
 
         # 操作停止
         deck_img.classList.add("disabled")
@@ -510,9 +539,137 @@ def refill_deck_if_empty():
     discard = []        # 捨て札は空に
     return True
 
+def set_turn_ui(player: str):
+    # いったん全部OFF
+    for pid in ["you-box", "cpuA-box", "cpuB-box", "cpuC-box"]:
+        el = document.getElementById(pid)
+        if el:
+            el.classList.remove("turn-active")
+
+    # ON
+    box_id = {"you":"you-box","cpuA":"cpuA-box","cpuB":"cpuB-box","cpuC":"cpuC-box"}[player]
+    el = document.getElementById(box_id)
+    if el:
+        el.classList.add("turn-active")
+
+    # msg も追加
+    # （すでに別メッセージを出した直後に上書きしたくないなら、render_all()の末尾で呼ぶのが安定）
+    set_msg(f"{name_ja(player)} の番です。\n", ok=True)
+
+def name_ja(player: str) -> str:
+    return {
+        "you":"あなた",
+        "cpuA":"プレーヤーA",
+        "cpuB":"プレーヤーB",
+        "cpuC":"プレーヤーC",
+    }[player]
+
+def next_player():
+    global current_player_idx, current_player
+    current_player_idx = (current_player_idx + 1) % len(TURN_ORDER)
+    current_player = TURN_ORDER[current_player_idx]
+    set_turn_ui(current_player)
+
+def get_hand(player: str) -> list[int]:
+    if player == "cpuA": return cpuA
+    if player == "cpuB": return cpuB
+    if player == "cpuC": return cpuC
+    raise ValueError("player must be cpuA/cpuB/cpuC")
+
+async def cpu_play(player: str, card_id: int):
+    global field, selected, last_actor
+
+    hand = get_hand(player)
+    if card_id not in hand:
+        return
+
+    # 残り1枚は “ドボン宣言以外で上がれない” ルール（CPUにも同様に適用するなら）
+    # ※今はドボン判定は「あなた」だけ運用が多いので、まずは“出せない”だけでもOK
+    if len(hand) == 1:
+        # 出さない（次の手番でどうするかは今後）
+        return
+
+    if not can_play(card_id, field):
+        return
+
+    # 捨て札へ
+    if field is not None:
+        discard.append(field)
+
+    hand.remove(card_id)
+    field = card_id
+
+    # ★直前に行動した人（重要！）
+    last_actor = player
+
+    set_msg(f"{name_ja(player)} が場に出しました。\n", ok=True)
+    render_all()
+
+async def cpu_draw(player: str):
+    global last_actor
+
+    # 山札補充
+    refill_deck_if_empty()
+    if len(deck) == 0:
+        set_msg("山札も捨て札もありません。\n", ng=True)
+        return
+
+    hand = get_hand(player)
+
+    # 「出せるカードがあるなら必ず出す」ルール
+    if any(can_play(cid, field) for cid in hand):
+        # 本来は引けない
+        return
+
+    c = deck.pop()
+    hand.append(c)
+
+    # ★直前に行動した人（重要！）
+    last_actor = player
+
+    set_msg(f"{name_ja(player)} が山から1枚取りました。\n", ok=True)
+    render_all()
+
+async def run_cpu_turns_until_you():
+    global busy, game_over
+
+    # you の次から回す
+    while (not game_over) and current_player != "you":
+        # 手番表示
+        set_turn_ui(current_player)
+
+        # 少し間を置く（演出）
+        await asyncio.sleep(0.35)
+
+        # Lv1：出せるなら最大rank
+        hand = get_hand(current_player)
+
+        # 残り1枚のときの“出さない”ルール（ワンクッション運用を強めたいなら、ここで draw に寄せる等も可能）
+        if field is None:
+            # 異常系
+            next_player()
+            continue
+
+        chosen = cpu.choose_card_lv1(hand, field, can_play)
+
+        if chosen is not None:
+            await cpu_play(current_player, chosen)
+        else:
+            await cpu_draw(current_player)
+
+        # 次の人へ
+        next_player()
+
+    # you に戻ったら表示更新
+    if not game_over:
+        set_turn_ui("you")
+
+
 # ===== PyScript entry points =====
 def reset_game(event=None):
+    global last_actor
+    last_actor = None
     asyncio.create_task(reset_async())
-
+    
 # init
 asyncio.create_task(reset_async())
