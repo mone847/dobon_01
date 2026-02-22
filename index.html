@@ -144,6 +144,11 @@
 .deck-card:hover{ transform: translateY(-6px); }
 .deck-card.disabled{ opacity:.45; cursor:not-allowed; transform:none !important; }
 
+.turn-active{
+  background: #e9ffe9;     /* 薄グリーン */
+  border-color: #66bb66;
+}
+
     /* メッセージ */
     #msg {
       margin-top: 10px;
@@ -252,15 +257,15 @@
   <div class="layout">
     <!-- 左：CPU -->
     <div>
-      <div class="cpu-box">
+      <div class="cpu-box" id="cpuA-box">
         <div class="cpu-title" id="cpuA-title">プレーヤーA（0枚）</div>
         <div class="mini-row" id="cpuA-cards"></div>
       </div>
-      <div class="cpu-box">
+      <div class="cpu-box" id="cpuB-box">
         <div class="cpu-title" id="cpuB-title">プレーヤーB（0枚）</div>
         <div class="mini-row" id="cpuB-cards"></div>
       </div>
-      <div class="cpu-box">
+      <div class="cpu-box" id="cpuC-box">
         <div class="cpu-title" id="cpuC-title">プレーヤーC（0枚）</div>
         <div class="mini-row" id="cpuC-cards"></div>
       </div>
@@ -290,11 +295,12 @@
   </div>
 
   <!-- 下：あなた -->
-  <div class="hand-area">
+  <div class="hand-area" id="you-box">
     <div class="hand-title">あなたのカード</div>
     <div id="your-hand" class="hand-frame"></div>
   </div>
 
   <script type="py" src="main.py"></script>
+  <script type="py" src="cpu.py"></script>
 </body>
 </html>
