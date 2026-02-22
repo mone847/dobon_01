@@ -56,18 +56,20 @@ def card_to_suit_rank(i: int):
 
 def dobon_possible():
     """
-    手札すべての合計が
-    場札の数字と一致すればドボン可能
+    ルール：手札「すべて」の合計が、場の数字と一致したらドボン可能
+    戻り値：(ok, used)
+      ok: bool
+      used: list（将来拡張用。今は手札全部を返す）
     """
     if field is None or len(you) == 0:
-        return (False, [])
+        return False, []
 
-    target = card_to_suit_rank(field)[1]  # 場の数字
+    target = card_to_suit_rank(field)[1]
     total = sum(card_to_suit_rank(cid)[1] for cid in you)
 
-    if total == target:
-        return (True, you.copy())  # 全部使う
-    return (False, [])
+    ok = (total == target)
+    used = you[:] if ok else []
+    return ok, used
 
 
 def can_play(card_id: int, field_id: int) -> bool:
@@ -75,13 +77,14 @@ def can_play(card_id: int, field_id: int) -> bool:
     s2, r2 = card_to_suit_rank(field_id)
     return (s1 == s2) or (r1 == r2)
 
-def has_playable() -> bool:
-    # ★手札が1枚のときは「ドボン以外では上がれない」ので、出せる扱いにしない
+def has_playable():
     if field is None:
         return False
-    if len(you) <= 1:
+    # ★残り1枚は「ドボン宣言」以外では出せない＝playable扱いにしない
+    if len(you) == 1:
         return False
-    return any(can_play(c, field) for c in you)
+
+    return any(can_play(cid, field) for cid in you)
 
 
 def set_msg(text: str, ok=False, ng=False):
