@@ -439,8 +439,7 @@ async def try_dobon_async():
         if not ok:
             set_msg(
                 f"ドボンできません。\n"
-                f"手札の合計：{total}\n"
-                f"場の数字：{target}",
+                f"手札の合計：{total}  場の数字：{target}",
                 ng=True
             )
             return
@@ -497,6 +496,9 @@ def refill_deck_if_empty():
     random.shuffle(discard)
     deck = discard[:]   # 山札に戻す
     discard = []        # 捨て札は空に
+    set_msg(
+            "場のカードを山に戻しました。！\n"
+        )
 
 # ===== PyScript entry points =====
 def reset_game(event=None):
