@@ -130,10 +130,10 @@ def img_el(src: str, cls: str = ""):
         im.className = cls
     return im
 
-def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
-    # ===== タイトル =====
+def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list, pid: str):
     n = len(cards_list)
-    panel_title_el.innerText = f"{name}（{n}枚）"
+    stats = win_rate_str(pid)
+    panel_title_el.innerText = f"{name}（{n}枚）\n{stats}"
 
     clear_node(panel_cards_el)
 
@@ -143,7 +143,6 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
 
     back = _cards.getUrl(0)
 
-    # ===== コンテナ幅 =====
     w = int(panel_cards_el.clientWidth) if panel_cards_el.clientWidth else 260
     avail = max(120, w - 8)
 
@@ -151,33 +150,25 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
     gap = 10
 
     total_normal = n * card_w + max(0, n - 1) * gap
+    THRESHOLD = 8
 
-    THRESHOLD = 8  # 8枚までは通常表示
-
-    # ===== 通常表示かstackか判定 =====
     if n <= THRESHOLD and total_normal <= avail:
         use_stack = False
     else:
         use_stack = True
 
     panel_cards_el.style.position = "relative"
-    if use_stack:
-        panel_cards_el.style.minHeight = "78px"
-    else:
-        panel_cards_el.style.minHeight = "70px"
+    panel_cards_el.style.minHeight = "78px" if use_stack else "70px"
 
-    # ===== 描画 =====
     for idx in range(n):
         im = img_el(back, "cpu-card")
 
         if use_stack:
-            # 自動 step_x 計算
             if n == 1:
                 step_x = 0
             else:
-                # 「最後のカードが右端に来る」ように計算
                 step_x = (avail - card_w) / (n - 1)
-                step_x = max(6, min(18, step_x))  # 最小6px、最大18pxに制限
+                step_x = max(6, min(18, step_x))
 
             left = idx * step_x
             top = 2
@@ -186,9 +177,6 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
             im.style.left = f"{left}px"
             im.style.top = f"{top}px"
             im.style.zIndex = str(idx)
-        else:
-            im.classList.remove("stack")
-            im.style.position = "static"
 
         panel_cards_el.appendChild(im)
 
