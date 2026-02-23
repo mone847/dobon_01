@@ -642,7 +642,8 @@ async def cpu_draw(player: str):
     hand = get_hand(player)
 
     # 「出せるカードがあるなら必ず出す」ルール
-    if any(can_play(cid, field) for cid in hand):
+    # ★ただし残り1枚は“ドボン以外で上がれない”ので、出せる判定にしない（＝引いてよい）
+    if len(hand) > 1 and any(can_play(cid, field) for cid in hand):
         # 本来は引けない
         return
 
@@ -676,12 +677,15 @@ async def run_cpu_turns_until_you():
             next_player()
             continue
 
-        chosen = choose_card_lv1(hand, field, can_play)
-
-        if chosen is not None:
-            await cpu_play(current_player, chosen)
-        else:
+        # ★追加：残り1枚は必ず引く（ワンクッション/上がり禁止ルール対応）
+        if len(hand) == 1:
             await cpu_draw(current_player)
+        else:
+            chosen = choose_card_lv1(hand, field, can_play)
+            if chosen is not None:
+                await cpu_play(current_player, chosen)
+            else:
+                await cpu_draw(current_player)
 
         # ===== プレイヤー優先ドボンチェック（行動後） =====
         if can_dobon() and last_actor != "you":
