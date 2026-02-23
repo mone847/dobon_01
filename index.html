@@ -259,7 +259,10 @@
   from { transform: scale(1); }
   to   { transform: scale(1.08); }
 }
-
+  .hand-title,
+  .cpu-title {
+    white-space: pre-line;
+  }
   </style>
 </head>
 
@@ -308,7 +311,7 @@
 
   <!-- 下：あなた -->
   <div class="hand-area" id="you-box">
-    <div class="hand-title">あなたのカード</div>
+    <div class="hand-title" id="you-title">あなた（0枚）</div>
     <div id="your-hand" class="hand-frame"></div>
   </div>
 
