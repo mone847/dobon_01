@@ -2,7 +2,7 @@ from js import document, window
 import random
 import asyncio
 from pyodide.ffi import create_proxy
-import cpu
+from typing import Callable, Optional
 
 event_proxies = []
 
