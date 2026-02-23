@@ -564,24 +564,8 @@ def try_dobon(event=None):
     asyncio.create_task(try_dobon_async())
 
 def can_dobon():
-    # 手札が空なら不可
-    if not you:
-        return False
-
-    # 場のカードがなければ不可
-    if field is None:
-        return False
-
-    # 場の数字を取得（1～13）
-    field_rank = ((field - 1) % 13) + 1
-
-    # 手札の合計を計算
-    total = 0
-    for c in you:
-        rank = ((c - 1) % 13) + 1
-        total += rank
-
-    return total == field_rank
+    ok, _ = dobon_possible()
+    return ok
 
 def refill_deck_if_empty():
     """山札が空なら、場の一番上(field)だけ残して discard をシャッフルして山に戻す"""
