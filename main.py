@@ -341,7 +341,9 @@ async def reset_async():
 
         current_player_idx = 0
         current_player = TURN_ORDER[current_player_idx]
-
+        set_dobon_alert(False)
+        dobon_btn.disabled = False
+        
         # シャッフル
         deck = list(range(1, 53))
         random.shuffle(deck)
@@ -766,8 +768,15 @@ def cpu_can_dobon(hand):
 
 # ===== PyScript entry points =====
 def reset_game(event=None):
-    global last_actor
+    global last_actor, dobon_waiting, game_over
+
     last_actor = None
+    dobon_waiting = False
+    game_over = False
+
+    set_dobon_alert(False)
+    dobon_btn.disabled = False
+
     asyncio.create_task(reset_async())
     
 # init
