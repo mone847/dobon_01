@@ -511,8 +511,7 @@ async def try_dobon_async():
 
         set_msg(
             "ドボン！ あなたの勝ち！\n"
-            f"手札の合計：{total} = 場の数字：{target}\n"
-            f"負け：{loser}",
+            f"手札：{total} = 場：{target}  負け：{loser}",
             ok=True
         )
 
@@ -610,10 +609,9 @@ async def cpu_play(player: str, card_id: int):
     if card_id not in hand:
         return
 
-    # 残り1枚は “ドボン宣言以外で上がれない” ルール（CPUにも同様に適用するなら）
-    # ※今はドボン判定は「あなた」だけ運用が多いので、まずは“出せない”だけでもOK
+    # 残り1枚は “ドボン宣言以外で上がれない” ルール（CPUにも同様に適用）
     if len(hand) == 1:
-        # 出さない（次の手番でどうするかは今後）
+        # 出さない
         return
 
     if not can_play(card_id, field):
