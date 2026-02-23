@@ -72,7 +72,7 @@ def win_rate_str(player: str) -> str:
 def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list, pid: str):
     n = len(cards_list)
     stats = win_rate_str(pid)
-    panel_title_el.innerText = f"{name}（{n}枚）\n{stats}"
+    panel_title_el.innerText = f"{name}（{n}枚） {stats}"
 
 # ---- カード番号→(スート,数字)の割り当て ----
 # c1..c52 の並びは「♣→♦→♥→♠（各A..K）」
@@ -183,7 +183,7 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list, pid: str):
 def render_you_title():
     n = len(you)
     stats = win_rate_str("you")
-    you_title.innerText = f"あなた（{n}枚）\n{stats}"
+    you_title.innerText = f"あなた（{n}枚） {stats}"
 
 def render_deck():
     deck_title.innerText = f"山のカード（{len(deck)}枚）"
