@@ -621,15 +621,18 @@ async def cpu_play(player: str, card_id: int):
     global field, selected, last_actor
 
     hand = get_hand(player)
+    # タイミング差
     if card_id not in hand:
+        await cpu_draw(player)
         return
 
     # 残り1枚は “ドボン宣言以外で上がれない” ルール（CPUにも同様に適用）
     if len(hand) == 1:
-        # 出さない
+        await cpu_draw(player)
         return
 
     if not can_play(card_id, field):
+        await cpu_draw(player)
         return
 
     # 捨て札へ
@@ -656,18 +659,11 @@ async def cpu_draw(player: str):
 
     hand = get_hand(player)
 
-    # 「出せるカードがあるなら必ず出す」ルール
-    # ★ただし残り1枚は“ドボン以外で上がれない”ので、出せる判定にしない（＝引いてよい）
-    if len(hand) > 1 and any(can_play(cid, field) for cid in hand):
-        # 本来は引けない
-        return
-
     c = deck.pop()
     hand.append(c)
 
     # ★直前に行動した人（重要！）
     last_actor = player
-
     set_msg(f"{name_ja(player)} が山から1枚取りました。\n", ok=True)
     render_all()
 
