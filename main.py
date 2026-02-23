@@ -3,7 +3,6 @@ import random
 import asyncio
 from pyodide.ffi import create_proxy
 from typing import Callable, Optional
-import cpu  # CPUのアルゴリズム（別ファイル）
 
 event_proxies = []
 
@@ -656,7 +655,7 @@ async def run_cpu_turns_until_you():
             next_player()
             continue
 
-        chosen = cpu.choose_card_lv1(hand, field, can_play)
+        chosen = choose_card_lv1(hand, field, can_play)
 
         if chosen is not None:
             await cpu_play(current_player, chosen)
