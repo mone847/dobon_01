@@ -698,42 +698,45 @@ async def run_cpu_turns_until_you():
         set_turn_ui(current_player)
         await asyncio.sleep(0.35)
 
-        # ===== プレイヤー優先ドボンチェック =====
-        if can_dobon() and last_actor != "you":
-            dobon_waiting = True
-            set_dobon_alert(True)
-            set_msg("ドボンチャンス！「ドボン！」を押してください。\n", ok=True)
-            return
-
         hand = get_hand(current_player)
 
         if field is None:
             next_player()
             continue
 
-        # ★追加：残り1枚は必ず引く（ワンクッション/上がり禁止ルール対応）
+        # ★残り1枚は必ず引く（ドボン以外では上がれないルール対応）
         if len(hand) == 1:
-            await cpu_draw(current_player)
+            chosen = None
         else:
             if current_player == "cpuA":
+                # Lv1
                 chosen = choose_card_lv1(hand, field, can_play)
+
             elif current_player in ("cpuB", "cpuC"):
-                chosen = choose_card_lv2(hand, field, can_play)
+                # Lv2：まず「この1手で次回ドボン体制を作れる」手を探す
+                playable = [c for c in hand if can_play(c, field)]
+                chosen = None
+
+                for c in playable:
+                    new_hand = hand[:]   # copy
+                    new_hand.remove(c)   # 出した後の手札
+                    if cpu_can_dobon(new_hand):
+                        chosen = c
+                        break
+
+                # 見つからなければ通常Lv2（温存＋場を動かさない）
+                if chosen is None:
+                    chosen = choose_card_lv2(hand, field, can_play)
             else:
                 chosen = None
-            if chosen is not None:
-                await cpu_play(current_player, chosen)
-            else:
-                await cpu_draw(current_player)
 
-        # ===== プレイヤー優先ドボンチェック（行動後） =====
-        if can_dobon() and last_actor != "you":
-            dobon_waiting = True
-            set_dobon_alert(True)
-            set_msg("ドボンチャンス！「ドボン！」を押してください。\n", ok=True)
-            return
+        # ===== 行動 =====
+        if chosen is not None:
+            await cpu_play(current_player, chosen)
+        else:
+            await cpu_draw(current_player)
 
-        # ===== CPUドボン判定 =====
+        # ===== CPUドボン判定（最優先） =====
         hand = get_hand(current_player)
         if cpu_can_dobon(hand) and last_actor != current_player:
             loser = last_actor if last_actor else "（不明）"
@@ -743,12 +746,22 @@ async def run_cpu_turns_until_you():
                 f"負け：{name_ja(loser)}",
                 ok=True
             )
+
             winner = current_player
             win_stats[winner]["win"] += 1
             for p in win_stats:
                 win_stats[p]["total"] += 1
-            
+
             game_over = True
+            set_dobon_alert(False)
+            dobon_waiting = False
+            return
+
+        # ===== you のドボン停止（CPU即ドボンが無いときだけ） =====
+        if can_dobon() and last_actor != "you":
+            dobon_waiting = True
+            set_dobon_alert(True)
+            set_msg("ドボンチャンス！「ドボン！」を押してください。\n", ok=True)
             return
 
         next_player()
