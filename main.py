@@ -10,6 +10,7 @@ event_proxies = []
 cpuA_title = document.getElementById("cpuA-title")
 cpuB_title = document.getElementById("cpuB-title")
 cpuC_title = document.getElementById("cpuC-title")
+you_title = document.getElementById("you-title")
 cpuA_cards = document.getElementById("cpuA-cards")
 cpuB_cards = document.getElementById("cpuB-cards")
 cpuC_cards = document.getElementById("cpuC-cards")
@@ -47,6 +48,12 @@ TURN_ORDER = ["you", "cpuA", "cpuB", "cpuC"]
 current_player_idx = 0
 current_player = "you"
 dobon_waiting = False
+win_stats = {
+    "you":  {"win": 0, "total": 0},
+    "cpuA": {"win": 0, "total": 0},
+    "cpuB": {"win": 0, "total": 0},
+    "cpuC": {"win": 0, "total": 0},
+}
 
 game_over = False  # 勝敗がついたら True
 
@@ -56,12 +63,23 @@ busy = False
 
 last_actor = None  # 最後に行動したプレーヤー
 
+def win_rate_str(player: str) -> str:
+    w = win_stats[player]["win"]
+    t = win_stats[player]["total"]
+    rate = (w / t * 100) if t > 0 else 0
+    return f"{w}勝/{t}回中（勝率{rate:.1f}%）"
+
+def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list, pid: str):
+    n = len(cards_list)
+    stats = win_rate_str(pid)
+    panel_title_el.innerText = f"{name}（{n}枚）\n{stats}"
+
 # ---- カード番号→(スート,数字)の割り当て ----
 # c1..c52 の並びは「♣→♦→♥→♠（各A..K）」
 def card_to_suit_rank(i: int):
     suit_index = (i - 1) // 13  # 0..3
     rank = (i - 1) % 13 + 1     # 1..13
-    suits = ["C", "D", "H", "S"]  # ♣ ♦ ♥ ♠ のつもり
+    suits = ["C", "D", "H", "S"]  # ♣ ♦ ♥ ♠ 
     return suits[suit_index], rank
 
 def dobon_possible():
@@ -174,6 +192,10 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list):
 
         panel_cards_el.appendChild(im)
 
+def render_you_title():
+    n = len(you)
+    stats = win_rate_str("you")
+    you_title.innerText = f"あなた（{n}枚）\n{stats}"
 
 def render_deck():
     deck_title.innerText = f"山のカード（{len(deck)}枚）"
@@ -296,9 +318,10 @@ def render_hand():
 
 
 def render_all():
-    render_cpu(cpuA_title, cpuA_cards, "プレーヤーA", cpuA)
-    render_cpu(cpuB_title, cpuB_cards, "プレーヤーB", cpuB)
-    render_cpu(cpuC_title, cpuC_cards, "プレーヤーC", cpuC)
+    render_cpu(cpuA_title, cpuA_cards, "プレーヤーA", cpuA, "cpuA")
+    render_cpu(cpuB_title, cpuB_cards, "プレーヤーB", cpuB, "cpuB")
+    render_cpu(cpuC_title, cpuC_cards, "プレーヤーC", cpuC, "cpuC")
+    render_you_title()
     render_field()
     render_deck()
     render_hand()
@@ -310,12 +333,26 @@ def render_all():
 
 # ===== Actions =====
 async def reset_async():
-    global deck, field, discard, you, cpuA, cpuB, cpuC, busy
+    global deck, field, discard
+    global you, cpuA, cpuB, cpuC
+    global busy, game_over, dobon_waiting
+    global current_player_idx, current_player
+    global selected, last_actor
+    
     if busy:
         return
     busy = True
     try:
         await ensure_cards()
+
+        # ===== 全フラグ完全リセット =====
+        game_over = False
+        dobon_waiting = False
+        selected = None
+        last_actor = None
+
+        current_player_idx = 0
+        current_player = TURN_ORDER[current_player_idx]
 
         # シャッフル
         deck = list(range(1, 53))
@@ -335,14 +372,18 @@ async def reset_async():
         # 画像初期化（リンク切れ防止）
         field_img.src = _cards.getUrl(field)
         deck_img.src = _cards.getUrl(0)
-
-        set_msg("配布完了。同じマーク or 同じ数字\n出せるカードが無い→山から取る。", ok=True)
+        # UI初期化
+        deck_img.classList.remove("disabled")
+        dobon_btn.disabled = False
+        set_dobon_alert(False)        
+        set_turn_ui("you")
+        set_msg("Newゲーム！。同じマーク or 同じ数字\n出せるカードが無い→山から取る。", ok=True)
+        
         render_all()
         
         current_player_idx = 0
         current_player = TURN_ORDER[current_player_idx]  # = "you"
-        set_turn_ui(current_player)
-
+        
         # 山札クリック
         def on_deck_click(evt):
             asyncio.create_task(draw_from_deck())
@@ -514,6 +555,9 @@ async def try_dobon_async():
             f"手札：{total} = 場：{target}  負け：{loser}",
             ok=True
         )
+        win_stats["you"]["win"] += 1
+        for p in win_stats:
+            win_stats[p]["total"] += 1
 
         dobon_waiting = False
         set_dobon_alert(False)
@@ -704,7 +748,11 @@ async def run_cpu_turns_until_you():
                 f"負け：{name_ja(loser)}",
                 ok=True
             )
-
+            winner = current_player
+            win_stats[winner]["win"] += 1
+            for p in win_stats:
+                win_stats[p]["total"] += 1
+            
             game_over = True
             return
 
