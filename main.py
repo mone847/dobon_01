@@ -46,6 +46,8 @@ discard=[]       # 捨て札
 TURN_ORDER = ["you", "cpuA", "cpuB", "cpuC"]
 current_player_idx = 0
 current_player = "you"
+dobon_waiting = False
+
 game_over = False  # 勝敗がついたら True
 
 selected = None  # iPad向け：選択中カードid（1回目タップで選択）
@@ -463,41 +465,61 @@ def hand_sum(cards):
     return sum(card_to_suit_rank(cid)[1] for cid in cards)
 
 async def try_dobon_async():
-    global busy
+    global busy, game_over, dobon_waiting, last_actor
+
     if busy:
         return
+
     busy = True
     try:
         ok, used = dobon_possible()
-        if ok and last_actor == "you":
-            set_msg(
-            "ドボン・準備完了！\n"
-            "次の人の手番後に「ドボン！」できます。",
-            ng=True
-            )
-            return
 
         target = card_to_suit_rank(field)[1]
         total = sum(card_to_suit_rank(cid)[1] for cid in you)
 
+        # ===== ワンクッション =====
+        if ok and last_actor == "you":
+            set_msg(
+                "ドボン・準備完了！\n"
+                "次の人の手番後に「ドボン！」できます。",
+                ng=True
+            )
+
+            # ★CPU停止中なら再開
+            if dobon_waiting:
+                dobon_waiting = False
+                set_dobon_alert(False)
+                asyncio.create_task(run_cpu_turns_until_you())
+            return
+
+        # ===== ドボン失敗 =====
         if not ok:
             set_msg(
                 f"ドボンできません。\n"
                 f"手札の合計：{total}  場の数字：{target}",
                 ng=True
             )
+
+            if dobon_waiting:
+                dobon_waiting = False
+                set_dobon_alert(False)
+                asyncio.create_task(run_cpu_turns_until_you())
             return
 
-        # 勝利（負けは last_actor）
+        # ===== 勝利 =====
         loser = last_actor if last_actor is not None else "（不明）"
-        set_msg(
-                "ドボン！ あなたの勝ち！\n"
-                f"手札の合計：{total} = 場の数字：{target}\n"
-                f"負け：{loser}",
-                ok=True
-            )
 
-        # 操作停止
+        set_msg(
+            "ドボン！ あなたの勝ち！\n"
+            f"手札の合計：{total} = 場の数字：{target}\n"
+            f"負け：{loser}",
+            ok=True
+        )
+
+        dobon_waiting = False
+        set_dobon_alert(False)
+        game_over = True
+
         deck_img.classList.add("disabled")
         dobon_btn.disabled = True
 
@@ -636,22 +658,23 @@ async def cpu_draw(player: str):
     render_all()
 
 async def run_cpu_turns_until_you():
-    global busy, game_over
+    global busy, game_over, current_player, last_actor, dobon_waiting
 
-    # you の次から回す
     while (not game_over) and current_player != "you":
-        # 手番表示
-        set_turn_ui(current_player)
 
-        # 少し間を置く（演出）
+        set_turn_ui(current_player)
         await asyncio.sleep(0.35)
 
-        # Lv1：出せるなら最大rank
+        # ===== プレイヤー優先ドボンチェック =====
+        if can_dobon() and last_actor != "you":
+            dobon_waiting = True
+            set_dobon_alert(True)
+            set_msg("ドボンチャンス！「ドボン！」を押してください。\n", ok=True)
+            return
+
         hand = get_hand(current_player)
 
-        # 残り1枚のときの“出さない”ルール（ワンクッション運用を強めたいなら、ここで draw に寄せる等も可能）
         if field is None:
-            # 異常系
             next_player()
             continue
 
@@ -662,12 +685,45 @@ async def run_cpu_turns_until_you():
         else:
             await cpu_draw(current_player)
 
-        # 次の人へ
+        # ===== プレイヤー優先ドボンチェック（行動後） =====
+        if can_dobon() and last_actor != "you":
+            dobon_waiting = True
+            set_dobon_alert(True)
+            set_msg("ドボンチャンス！「ドボン！」を押してください。\n", ok=True)
+            return
+
+        # ===== CPUドボン判定 =====
+        hand = get_hand(current_player)
+        if cpu_can_dobon(hand) and last_actor != current_player:
+            loser = last_actor if last_actor else "（不明）"
+
+            set_msg(
+                f"{name_ja(current_player)} がドボン！\n"
+                f"負け：{name_ja(loser)}",
+                ok=True
+            )
+
+            game_over = True
+            return
+
         next_player()
 
-    # you に戻ったら表示更新
     if not game_over:
         set_turn_ui("you")
+
+
+def set_dobon_alert(on: bool):
+    if on:
+        dobon_btn.classList.add("dobon-alert")
+    else:
+        dobon_btn.classList.remove("dobon-alert")
+
+def cpu_can_dobon(hand):
+    if field is None or len(hand) == 0:
+        return False
+    target = card_to_suit_rank(field)[1]
+    total = sum(card_to_suit_rank(c)[1] for c in hand)
+    return total == target
 
 
 # ===== PyScript entry points =====
