@@ -596,9 +596,6 @@ def set_turn_ui(player: str):
     if el:
         el.classList.add("turn-active")
 
-    # msg も追加
-    # （すでに別メッセージを出した直後に上書きしたくないなら、render_all()の末尾で呼ぶのが安定）
-    set_msg(f"{name_ja(player)} の番です。\n", ok=True)
 
 def name_ja(player: str) -> str:
     return {
@@ -699,20 +696,7 @@ async def run_cpu_turns_until_you():
         # ワンクッション：直前行動者が自分ならドボン不可（次の周回で誰かが動けばOKになる）
         if cpu_can_dobon(hand) and last_actor != current_player:
             loser = last_actor if last_actor else "（不明）"
-            set_msg(
-                f"{name_ja(current_player)} がドボン！\n"
-                f"負け：{name_ja(loser)}",
-                ok=True
-            )
-
-            winner = current_player
-            win_stats[winner]["win"] += 1
-            for p in win_stats:
-                win_stats[p]["total"] += 1
-
-            game_over = True
-            set_dobon_alert(False)
-            dobon_waiting = False
+            end_game_by_dobon(current_player, loser)
             return
 
         # ===== 行動（Lv1/Lv2） =====
@@ -767,6 +751,26 @@ def cpu_can_dobon(hand):
     total = sum(card_to_suit_rank(c)[1] for c in hand)
     return total == target
 
+def end_game_by_dobon(winner: str, loser: str):
+    global game_over, dobon_waiting
+
+    game_over = True
+    dobon_waiting = False
+    set_dobon_alert(False)
+
+    # UI停止
+    deck_img.classList.add("disabled")
+    dobon_btn.disabled = True
+
+    # 勝敗表示（ここが上書きされないのが大事）
+    set_msg(f"{name_ja(winner)} がドボン！\n負け：{name_ja(loser)}", ok=True)
+
+    # 勝率更新もここで
+    win_stats[winner]["win"] += 1
+    for p in win_stats:
+        win_stats[p]["total"] += 1
+
+    render_all()
 
 # ===== PyScript entry points =====
 def reset_game(event=None):
