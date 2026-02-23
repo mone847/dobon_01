@@ -2,6 +2,7 @@ from js import document, window
 import random
 import asyncio
 from pyodide.ffi import create_proxy
+import cpu
 
 event_proxies = []
 
@@ -335,6 +336,10 @@ async def reset_async():
 
         set_msg("配布完了。同じマーク or 同じ数字\n出せるカードが無い→山から取る。", ok=True)
         render_all()
+        
+        current_player_idx = 0
+        current_player = TURN_ORDER[current_player_idx]  # = "you"
+        set_turn_ui(current_player)
 
         # 山札クリック
         def on_deck_click(evt):
