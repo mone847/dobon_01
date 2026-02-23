@@ -3,6 +3,7 @@ import random
 import asyncio
 from pyodide.ffi import create_proxy
 from typing import Callable, Optional
+import cpu  # CPUのアルゴリズム（別ファイル）
 
 event_proxies = []
 
