@@ -715,7 +715,12 @@ async def run_cpu_turns_until_you():
         if len(hand) == 1:
             await cpu_draw(current_player)
         else:
-            chosen = choose_card_lv1(hand, field, can_play)
+            if current_player == "cpuA":
+                chosen = choose_card_lv1(hand, field, can_play)
+            elif current_player in ("cpuB", "cpuC"):
+                chosen = choose_card_lv2(hand, field, can_play)
+            else:
+                chosen = None
             if chosen is not None:
                 await cpu_play(current_player, chosen)
             else:
