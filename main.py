@@ -133,7 +133,7 @@ def img_el(src: str, cls: str = ""):
 def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list, pid: str):
     n = len(cards_list)
     stats = win_rate_str(pid)
-    panel_title_el.innerText = f"{name}（{n}枚）\n{stats}"
+    panel_title_el.innerText = f"{name}（{n}枚） {stats}"
 
     clear_node(panel_cards_el)
 
