@@ -796,7 +796,7 @@ def end_game_by_dobon(winner: str, loser: str):
 
     # ===== 勝者ブリンク演出 =====
     for box in ["cpuA-box","cpuB-box","cpuC-box"]:
-    el = document.getElementById(box)
+        el = document.getElementById(box)
     if el:
         el.classList.remove("win-blink")
 
