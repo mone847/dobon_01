@@ -3,6 +3,7 @@ import random
 import asyncio
 from pyodide.ffi import create_proxy
 from typing import Callable, Optional
+from __future__ import annotations
 
 event_proxies = []
 
@@ -697,7 +698,7 @@ async def run_cpu_turns_until_you():
             set_turn_ui(current_player)
             await asyncio.sleep(0.35)
 
-            # you優先：ドボンチャンスならCPUを止める
+            # ===== you優先：ドボンチャンスならCPU停止 =====
             if can_dobon() and last_actor != "you":
                 dobon_waiting = True
                 set_dobon_alert(True)
@@ -710,38 +711,53 @@ async def run_cpu_turns_until_you():
                 next_player()
                 continue
 
-            # CPU 即ドボン判定（行動前）
+            # ===== CPU 即ドボン判定（行動前） =====
             if cpu_can_dobon(hand) and last_actor != current_player:
                 loser = last_actor if last_actor else "（不明）"
                 end_game_by_dobon(current_player, loser)
                 return
 
-            # 行動（Lv1/Lv2）
+            # ===== 行動選択 =====
             if len(hand) == 1:
+                # ワンクッションルール
                 chosen = None
-            else:
-                if current_player == "cpuA":
-                    chosen = choose_card_lv1(hand, field, can_play)
-                elif current_player in ("cpuB", "cpuC"):
-                    playable = [c for c in hand if can_play(c, field)]
-                    chosen = None
-                    for c in playable:
-                        new_hand = hand[:]
-                        new_hand.remove(c)
-                        if cpu_can_dobon(new_hand):
-                            chosen = c
-                            break
-                    if chosen is None:
-                        chosen = choose_card_lv2(hand, field, can_play)
-                else:
-                    chosen = None
 
+            else:
+                chosen = None
+
+                # --- ① この1手で「次ターンドボン体制」を作れるか？ ---
+                playable = [c for c in hand if can_play(c, field)]
+                for c in playable:
+                    new_hand = hand[:]
+                    new_hand.remove(c)
+
+                    # 出した直後は自分はドボン不可（ワンクッション）
+                    # なので「次の自分の番でドボン可能形」になっているかを見る
+                    if cpu_can_dobon(new_hand):
+                        chosen = c
+                        break
+
+                # --- ② 通常アルゴリズム ---
+                if chosen is None:
+                    if current_player == "cpuA":
+                        chosen = choose_card_lv1(hand, field, can_play)
+
+                    elif current_player == "cpuB":
+                        chosen = choose_card_lv2(hand, field, can_play)
+
+                    elif current_player == "cpuC":
+                        chosen = choose_card_lv2_keep_field(hand, field, can_play)
+
+                    else:
+                        chosen = None
+
+            # ===== 実行 =====
             if chosen is not None:
                 await cpu_play(current_player, chosen)
             else:
                 await cpu_draw(current_player)
 
-            # 行動後：you のドボン停止
+            # ===== 行動後：youのドボン停止 =====
             if can_dobon() and last_actor != "you":
                 dobon_waiting = True
                 set_dobon_alert(True)
