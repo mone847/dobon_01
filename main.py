@@ -1,9 +1,9 @@
+from __future__ import annotations
 from js import document, window
 import random
 import asyncio
 from pyodide.ffi import create_proxy
 from typing import Callable, Optional
-from __future__ import annotations
 
 event_proxies = []
 
