@@ -1,4 +1,5 @@
 # CPUのアルゴリズム
+from typing import Callable, Optional
 
 def rank_of(card_id: int) -> int:
     # 1..13
