@@ -328,6 +328,12 @@ async def reset_async():
     global selected, last_actor
     global reveal_cpu
     
+    # ブリンク解除
+    for box in ["cpuA-box","cpuB-box","cpuC-box"]:
+        el = document.getElementById(box)
+        if el:
+            el.classList.remove("win-blink")
+
     if busy:
         return
     busy = True
@@ -787,6 +793,18 @@ def end_game_by_dobon(winner: str, loser: str):
         win_stats[winner]["win"] += 1
     for p in win_stats:
         win_stats[p]["total"] += 1
+
+    # ===== 勝者ブリンク演出 =====
+    for box in ["cpuA-box","cpuB-box","cpuC-box"]:
+    el = document.getElementById(box)
+    if el:
+        el.classList.remove("win-blink")
+
+    if winner in ("cpuA","cpuB","cpuC"):
+        box_id = f"{winner}-box"
+        el = document.getElementById(box_id)
+    if el:
+        el.classList.add("win-blink")
 
     render_all()
 
