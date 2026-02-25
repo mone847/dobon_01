@@ -61,7 +61,7 @@ selected = None  # iPad向け：選択中カードid（1回目タップで選択
 
 busy = False
 cpu_running = False  # CPUが行動中はTrue（あなたの操作を一時的に無効化）
-
+reveal_cpu = None   # "cpuA" / "cpuB" / "cpuC" / None
 last_actor = None  # 最後に行動したプレーヤー
 
 def win_rate_str(player: str) -> str:
@@ -132,9 +132,10 @@ def img_el(src: str, cls: str = ""):
     return im
 
 def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list, pid: str):
+    global reveal_cpu
+
     n = len(cards_list)
-    stats = win_rate_str(pid)
-    panel_title_el.innerText = f"{name}（{n}枚） {stats}"
+    panel_title_el.innerText = f"{name}（{n}枚） {win_rate_str(pid)}"
 
     clear_node(panel_cards_el)
 
@@ -142,41 +143,39 @@ def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list, pid: str):
         panel_cards_el.style.minHeight = "70px"
         return
 
-    back = _cards.getUrl(0)
+    # ★このCPUだけ表を見せる
+    reveal = (reveal_cpu == pid)
 
+    # 幅計算などは今まで通り（省略せずそのまま残す）
     w = int(panel_cards_el.clientWidth) if panel_cards_el.clientWidth else 260
     avail = max(120, w - 8)
-
-    card_w = 52
+    card_w = 56 if w < 240 else 52
     gap = 10
 
+    # 8枚までは重ねない、超えたら重ねる
+    threshold = 8
     total_normal = n * card_w + max(0, n - 1) * gap
-    THRESHOLD = 8
+    use_stack = (n > threshold) or (total_normal > avail)
 
-    if n <= THRESHOLD and total_normal <= avail:
-        use_stack = False
+    # stack用：自動で step_x を縮める（あなたの現行方針）    
+    base_top = 2
+    # 右端をはみ出しにくいように step_x を調整
+    if use_stack:
+        step_x = max(8, min(18, int((avail - card_w) / max(1, n - 1))))
     else:
-        use_stack = True
+        step_x = card_w + gap
 
-    panel_cards_el.style.position = "relative"
     panel_cards_el.style.minHeight = "78px" if use_stack else "70px"
 
     for idx in range(n):
-        im = img_el(back, "cpu-card")
+        # ★表or裏のURLを切り替える
+        url = _cards.getUrl(cards_list[idx]) if reveal else _cards.getUrl(0)
+        im = img_el(url, "cpu-card")
 
         if use_stack:
-            if n == 1:
-                step_x = 0
-            else:
-                step_x = (avail - card_w) / (n - 1)
-                step_x = max(6, min(18, step_x))
-
-            left = idx * step_x
-            top = 2
-
             im.classList.add("stack")
-            im.style.left = f"{left}px"
-            im.style.top = f"{top}px"
+            im.style.left = f"{idx * step_x}px"
+            im.style.top = f"{base_top}px"
             im.style.zIndex = str(idx)
 
         panel_cards_el.appendChild(im)
@@ -327,6 +326,7 @@ async def reset_async():
     global busy, game_over, dobon_waiting
     global current_player_idx, current_player
     global selected, last_actor
+    global reveal_cpu
     
     if busy:
         return
@@ -339,6 +339,7 @@ async def reset_async():
         dobon_waiting = False
         selected = None
         last_actor = None
+        reveal_cpu = None        
 
         current_player_idx = 0
         current_player = TURN_ORDER[current_player_idx]
@@ -384,6 +385,7 @@ async def reset_async():
 
     finally:
         busy = False
+       
 
 async def tap_card(card_id: int):
     global selected
@@ -458,7 +460,7 @@ async def draw_from_deck():
 
     # ★CPUが動いている間は you は引けない（ドボンボタンだけ許す）
     if cpu_running or current_player != "you":  
-        set_msg("CPUの手番中です。ドボン以外はできません。", ng=True)
+        set_msg("CPUの番です。ドボン以外ＮＧ。", ng=True)
         return
 
     if busy:
@@ -762,12 +764,17 @@ def cpu_can_dobon(hand):
     return total == target
 
 def end_game_by_dobon(winner: str, loser: str):
-    global game_over, dobon_waiting
+    global game_over, dobon_waiting, reveal_cpu
 
     game_over = True
     dobon_waiting = False
     set_dobon_alert(False)
 
+    # ★勝者がCPUなら表にする（you勝利ならNoneでOK）
+    if winner in ("cpuA", "cpuB", "cpuC"):
+        reveal_cpu = winner
+    else:
+        reveal_cpu = None
     # UI停止
     deck_img.classList.add("disabled")
     dobon_btn.disabled = True
@@ -776,7 +783,8 @@ def end_game_by_dobon(winner: str, loser: str):
     set_msg(f"{name_ja(winner)} がドボン！\n負け：{name_ja(loser)}", ok=True)
 
     # 勝率更新もここで
-    win_stats[winner]["win"] += 1
+    if winner in win_stats:
+        win_stats[winner]["win"] += 1
     for p in win_stats:
         win_stats[p]["total"] += 1
 
