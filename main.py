@@ -406,7 +406,7 @@ async def tap_card(card_id: int):
     await play_card(card_id)
 
 async def play_card(card_id: int):
-    global field, busy, selected, last_actor
+    global field, busy, selected, last_actor, cpu_running
 
     # ★CPUが動いている間は you は出せない（ドボンボタンだけ許す）
     if cpu_running or current_player != "you":
