@@ -132,6 +132,10 @@ def img_el(src: str, cls: str = ""):
         im.className = cls
     return im
 
+def set_img_src_safely(img, url: str):
+    img.classList.remove("ready")
+    img.src = url
+
 def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list, pid: str):
     global reveal_cpu
 
@@ -188,7 +192,7 @@ def render_you_title():
 
 def render_deck():
     deck_title.innerText = f"山のカード（{len(deck)}枚）"
-    deck_img.src = _cards.getUrl(0)
+    set_img_src_safely(deck_img, _cards.getUrl(0))
 
     # ★出せるカードがあるなら山札は引けない
     if len(deck) == 0 or has_playable():
@@ -198,9 +202,9 @@ def render_deck():
 
 def render_field():
     if field is None:
-        field_img.src = _cards.getUrl(0)
+        set_img_src_safely(field_img, _cards.getUrl(0))
     else:
-        field_img.src = _cards.getUrl(field)
+        set_img_src_safely(field_img, _cards.getUrl(field))
 
 def render_hand():
     global event_proxies
@@ -369,8 +373,8 @@ async def reset_async():
         field = deck.pop()
 
         # 画像初期化（リンク切れ防止）
-        field_img.src = _cards.getUrl(field)
-        deck_img.src = _cards.getUrl(0)
+        set_img_src_safely(field_img, _cards.getUrl(field))
+        set_img_src_safely(deck_img, _cards.getUrl(0))
         # UI初期化
         deck_img.classList.remove("disabled")
         dobon_btn.disabled = False
@@ -737,7 +741,7 @@ async def run_cpu_turns_until_you():
                         chosen = c
                         break
 
-                # --- ② 通常アルゴリズム ---
+                # --- アルゴリズム ---
                 if chosen is None:
                     if current_player == "cpuA":
                         chosen = choose_card_lv1(hand, field, can_play)
