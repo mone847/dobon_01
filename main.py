@@ -792,11 +792,19 @@ async def run_cpu_turns_until_you():
                         chosen = choose_card_lv1(hand, field, can_play)
 
                     elif current_player == "cpuB":
-                        chosen = choose_card_lv2(hand, field, can_play)
-
-                    elif current_player == "cpuC":
                         chosen = choose_card_lv2_keep_field(hand, field, can_play)
 
+                    elif current_player == "cpuC":
+                        chosen = choose_card_lv3(
+                            hand,
+                            field,
+                            can_play,
+                            discard=discard,
+                            you_hand_count=len(you),
+                            other_counts=[len(cpuA), len(cpuB)],
+                            keep_field_bias=True,
+                        )
+                    
                     else:
                         chosen = None
 
