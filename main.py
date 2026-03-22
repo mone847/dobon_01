@@ -64,6 +64,7 @@ busy = False
 cpu_running = False  # CPUが行動中はTrue（あなたの操作を一時的に無効化）
 reveal_cpu = None   # "cpuA" / "cpuB" / "cpuC" / None
 last_actor = None  # 最後に行動したプレーヤー
+last_winner = None   # "you", "cpuA", "cpuB", "cpuC"
 
 def win_rate_str(player: str) -> str:
     w = win_stats[player]["win"]
@@ -370,7 +371,7 @@ async def reset_async():
     global you, cpuA, cpuB, cpuC
     global busy, game_over, dobon_waiting
     global current_player_idx, current_player
-    global selected, last_actor
+    global selected, last_actor, last_winner
     global reveal_cpu
     
     # ブリンク解除
@@ -394,8 +395,19 @@ async def reset_async():
         last_actor = None
         reveal_cpu = None        
 
-        current_player_idx = 0
+        # ===== 先行プレイヤー決定 =====
+        if last_winner is None:
+        # 初回は you
+            start_player = "you"
+        else:
+            # 前回の勝者
+            start_player = last_winner
+
+        current_player_idx = TURN_ORDER.index(start_player)
         current_player = TURN_ORDER[current_player_idx]
+        set_turn_ui(current_player)
+        set_msg(f"{name_ja(current_player)} が先行です", ok=True)
+
         set_dobon_alert(False)
         dobon_btn.disabled = False
         
@@ -843,11 +855,12 @@ def cpu_can_dobon(hand):
     return total == target
 
 def end_game_by_dobon(winner: str, loser: str):
-    global game_over, dobon_waiting, reveal_cpu
+    global game_over, dobon_waiting, reveal_cpu, last_winner
 
     game_over = True
     dobon_waiting = False
     set_dobon_alert(False)
+    last_winner = winner
 
     # ★勝者がCPUなら表にする（you勝利ならNoneでOK）
     if winner in ("cpuA", "cpuB", "cpuC"):
