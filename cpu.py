@@ -125,5 +125,5 @@ def choose_card_lv2(
     return best
 
 def choose_card_lv2_keep_field(hand: list[int], field: int, can_play: Callable[[int, int], bool]) -> Optional[int]:
-    """lv2の『場を動かさない』寄り版（要求された別バージョン）"""
+    """lv2の『場を動かさない』寄り版"""
     return choose_card_lv2(hand, field, can_play, keep_field=True)
