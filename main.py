@@ -436,9 +436,7 @@ async def reset_async():
         render_all()
 
         set_turn_ui(current_player)
-        
-        # ★現在プレイヤーを確実に反映
-        current_player_idx = TURN_ORDER.index(current_player)
+
         set_msg(
             f"{name_ja(current_player)} から Newゲーム！\n"
             "同じ（マークか数字）／ない→山から取る",
