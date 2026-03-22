@@ -405,8 +405,7 @@ async def reset_async():
 
         current_player_idx = TURN_ORDER.index(start_player)
         current_player = TURN_ORDER[current_player_idx]
-        set_turn_ui(current_player)
-        set_msg(f"{name_ja(current_player)} が先行です", ok=True)
+
 
         set_dobon_alert(False)
         dobon_btn.disabled = False
@@ -433,16 +432,18 @@ async def reset_async():
         deck_img.classList.remove("disabled")
         dobon_btn.disabled = False
         set_dobon_alert(False)        
-        set_turn_ui("you")
-        set_msg("Newゲーム！。同じマーク or 同じ数字\n出せるカードが無い→山から取る。", ok=True)
         
         render_all()
 
+        set_turn_ui(current_player)
+        set_msg(
+            f"{name_ja(current_player)} から Newゲーム！\n"
+            "同じ（マークか数字）／ない→山から取る",
+            ok=True
+        )
         await asyncio.sleep(0.5)
         hide_loading_cards() 
         
-        current_player_idx = 0
-        current_player = TURN_ORDER[current_player_idx]  # = "you"
         
         # 山札クリック
         def on_deck_click(evt):
