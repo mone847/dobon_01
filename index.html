@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
-  <title>カードゲーム「DOBON」Ver.0.8.2</title>
+  <title>カードゲーム「DOBON」 Ver.0.8.4"></title>
 
   <!-- PyScript（固定版） -->
-  <link rel="stylesheet" href="https://pyscript.net/releases/2026.2.1/core.css">
-  <script type="module" src="https://pyscript.net/releases/2026.2.1/core.js"></script>
+  <link rel="stylesheet" href="https://pyscript.net/releases/2026.3.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2026.3.1/core.js"></script>
 
   <!-- cards.js -->
   <script defer src="cards.js"></script>
@@ -272,11 +272,25 @@
 .cpu-box.win-blink {
   animation: winBlink 0.6s ease-in-out 2;  /* 2回点滅 */
 }
+
+/* 場札・山札は、画像読込完了までは見せない */
+#field-card,
+#deck-card {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.08s ease;
+}
+
+#field-card.ready,
+#deck-card.ready {
+  visibility: visible;
+  opacity: 1;
+}
   </style>
 </head>
 
 <body>
-  <h1>DOBON（Ver.0.8.2）</h1>
+  <h1>DOBON（Ver.0.8.4）</h1>
 
   <div class="layout">
     <!-- 左：CPU -->
@@ -299,7 +313,7 @@
     <div class="center">
       <div class="label">場のカード</div>
       <div class="field-frame">
-        <img id="field-card" src="" alt="field">
+        <img id="field-card" src="" alt="field" onload="this.classList.add('ready')">
       </div>
     </div>
 
@@ -307,7 +321,7 @@
     <div class="right">
       <div class="label" id="deck-title">山のカード（0枚）</div>
       <div class="deck-wrap">
-        <img id="deck-card" class="deck-card" src="" alt="deck">
+        <img id="deck-card" class="deck-card" src="" alt="deck" onload="this.classList.add('ready')">
       </div>
 
       <div class="toolbar">
@@ -323,8 +337,8 @@
     <div class="hand-title" id="you-title">あなた（0枚）</div>
     <div id="your-hand" class="hand-frame"></div>
   </div>
-  <!-- VERSION: 0.8.2 -->
-  <script type="py" src="main.py?v=0.8.2"></script>
-  <script type="py" src="cpu.py?v=0.8.2"></script>
+  <!-- VERSION: 0.8.4 -->
+  <script type="py" src="main.py?v=0.8.4"></script>
+  <script type="py" src="cpu.py?v=0.8.4"></script>
 </body>
 </html>
