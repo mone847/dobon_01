@@ -436,6 +436,9 @@ async def reset_async():
         render_all()
 
         set_turn_ui(current_player)
+        
+        # ★現在プレイヤーを確実に反映
+        current_player_idx = TURN_ORDER.index(current_player)
         set_msg(
             f"{name_ja(current_player)} から Newゲーム！\n"
             "同じ（マークか数字）／ない→山から取る",
@@ -444,7 +447,7 @@ async def reset_async():
         await asyncio.sleep(0.5)
         hide_loading_cards() 
         
-        if current_player != "you":
+        if current_player in ("cpuA", "cpuB", "cpuC"):
             await asyncio.sleep(0.5)
             asyncio.create_task(run_cpu_turns_until_you())
                 
