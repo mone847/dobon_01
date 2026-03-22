@@ -37,6 +37,23 @@ def choose_card_lv1(hand: list[int], field: int, can_play: Callable[[int, int], 
     playable.sort(key=lambda c: rank_of(c), reverse=True)
     return playable[0]
 
+# ===== lv2 用 =====
+
+def count_pairs_by_rank(hand: list[int]) -> int:
+    from collections import Counter
+    cnt = Counter(rank_of(c) for c in hand)
+    return sum(v // 2 for v in cnt.values())
+
+def has_split_sum_structure(hand: list[int]) -> bool:
+    ranks = [rank_of(c) for c in hand]
+    s = set(ranks)
+    for t in range(2, 14):
+        for a in range(1, t):
+            b = t - a
+            if a in s and b in s:
+                return True
+    return False
+
 def choose_card_lv2(
     hand: list[int],
     field: int,
@@ -127,3 +144,154 @@ def choose_card_lv2(
 def choose_card_lv2_keep_field(hand: list[int], field: int, can_play: Callable[[int, int], bool]) -> Optional[int]:
     """lv2の『場を動かさない』寄り版"""
     return choose_card_lv2(hand, field, can_play, keep_field=True)
+
+# ===== lv3 用 =====
+
+def seen_rank_counts(discard: list[int], field: Optional[int]) -> dict[int, int]:
+    counts = {r: 0 for r in range(1, 14)}
+    for c in discard:
+        counts[rank_of(c)] += 1
+    if field is not None:
+        counts[rank_of(field)] += 1
+    return counts
+
+def remaining_rank_estimate(rank: int, discard: list[int], field: Optional[int]) -> int:
+    # 各数字は4枚ずつ存在
+    seen = seen_rank_counts(discard, field)
+    return max(0, 4 - seen[rank])
+
+def danger_score_for_target(
+    target_rank: int,
+    you_hand_count: int,
+    other_counts: list[int],
+    discard: list[int],
+    field: Optional[int],
+) -> int:
+    """
+    場を target_rank にしたとき、相手にドボンされる危険度の概算
+    """
+    danger = 0
+
+    remain = remaining_rank_estimate(target_rank, discard, field)
+
+    # 残り枚数が少ない相手ほど危険
+    if you_hand_count <= 2:
+        danger += 900
+    elif you_hand_count <= 3:
+        danger += 500
+    elif you_hand_count <= 4:
+        danger += 250
+
+    for n in other_counts:
+        if n <= 2:
+            danger += 600
+        elif n <= 3:
+            danger += 300
+
+    # 小さい数字ほどドボンしやすい
+    if target_rank <= 5:
+        danger += 260
+    elif target_rank <= 8:
+        danger += 120
+
+    # まだその数字が多く残っているほど危険
+    danger += remain * 90
+
+    return danger
+
+def choose_card_lv3(
+    hand: list[int],
+    field: int,
+    can_play: Callable[[int, int], bool],
+    *,
+    discard: list[int],
+    you_hand_count: int,
+    other_counts: list[int],
+    keep_field_bias: bool = True,
+) -> Optional[int]:
+    """
+    lv3:
+    - 自分のドボン圏を作る
+    - 相手の危険度を下げる
+    - 場に出たカード(discard + field)を利用して残り数字を推定
+    """
+    if field is None:
+        return None
+
+    playable = [c for c in hand if can_play(c, field)]
+    if not playable:
+        return None
+
+    field_rank = rank_of(field)
+    base_pairs = count_pairs_by_rank(hand)
+    base_split = has_split_sum_structure(hand)
+    base_total = total_rank(hand)
+
+    best = None
+    best_score = -10**18
+
+    for c in playable:
+        new_hand = hand[:]
+        new_hand.remove(c)
+
+        if len(new_hand) == 0:
+            continue
+
+        new_total = total_rank(new_hand)
+        new_pairs = count_pairs_by_rank(new_hand)
+        new_split = has_split_sum_structure(new_hand)
+
+        # このカードを出した後、場の数字は「出したカードの数字」になる
+        next_target = rank_of(c)
+
+        score = 0
+
+        # ===== 1. 勝ち筋：ドボン圏へ =====
+        if 1 <= new_total <= 13:
+            score += 7000
+            score += (13 - new_total) * 20
+        else:
+            score -= 6000
+            score -= (new_total - 13) * 60
+
+        # 次ターンでドボンしやすい形
+        if new_pairs > 0:
+            score += 280
+        if new_split:
+            score += 180
+
+        # ===== 2. 体制維持 =====
+        if new_pairs > base_pairs:
+            score += 260
+        elif new_pairs < base_pairs:
+            score -= 400
+
+        if (not base_split) and new_split:
+            score += 150
+        elif base_split and (not new_split):
+            score -= 150
+
+        # ===== 3. 大きいカードを切って手札合計を下げる =====
+        score += rank_of(c) * 28
+        score += (base_total - new_total) * 10
+
+        # ===== 4. 危険回避 =====
+        danger = danger_score_for_target(
+            next_target,
+            you_hand_count=you_hand_count,
+            other_counts=other_counts,
+            discard=discard,
+            field=field,
+        )
+        score -= danger
+
+        # ===== 5. 場を動かさない補正（弱め） =====
+        if keep_field_bias and rank_of(c) == field_rank:
+            score += 90
+
+        # tie-break
+        if (score > best_score) or (score == best_score and (best is None or rank_of(c) > rank_of(best))):
+            best_score = score
+            best = c
+
+    return best
