@@ -444,7 +444,10 @@ async def reset_async():
         await asyncio.sleep(0.5)
         hide_loading_cards() 
         
-        
+        if current_player != "you":
+            await asyncio.sleep(0.5)
+            asyncio.create_task(run_cpu_turns_until_you())
+                
         # 山札クリック
         def on_deck_click(evt):
             asyncio.create_task(draw_from_deck())
