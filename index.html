@@ -286,11 +286,66 @@
   visibility: visible;
   opacity: 1;
 }
+/* ローディングオーバーレイ */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+#loading-overlay.hidden {
+  display: none;
+}
+
+.loading-inner {
+  text-align: center;
+}
+
+.loading-cards {
+  position: relative;
+  width: 260px;
+  height: 150px;
+  margin: 0 auto 16px auto;
+}
+
+.loading-card {
+  position: absolute;
+  width: 90px;
+  height: auto;
+  top: 0;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  border-radius: 8px;
+}
+
+.loading-card.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.loading-text {
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+}
+
   </style>
 </head>
 
 <body>
   <h1>DOBON（Ver.0.8.4）</h1>
+
+  <div id="loading-overlay">
+    <div class="loading-inner">
+      <div id="loading-cards" class="loading-cards"></div>
+      <div class="loading-text">準備中・・・</div>
+    </div>
+  </div>
 
   <div class="layout">
     <!-- 左：CPU -->
