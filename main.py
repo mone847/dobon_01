@@ -132,6 +132,41 @@ def img_el(src: str, cls: str = ""):
         im.className = cls
     return im
 
+def show_loading_cards():
+    overlay = document.getElementById("loading-overlay")
+    cards_box = document.getElementById("loading-cards")
+
+    if not overlay or not cards_box:
+        return
+
+    clear_node(cards_box)
+    overlay.classList.remove("hidden")
+
+    back_url = _cards.getUrl(0)
+
+    positions = [0, 55, 110, 165]
+
+    for i, left in enumerate(positions):
+        im = document.createElement("img")
+        im.src = back_url
+        im.className = "loading-card"
+        im.style.left = f"{left}px"
+        im.style.zIndex = str(i)
+        cards_box.appendChild(im)
+
+        # 少しずつ表示
+        def make_show(img):
+            def _show():
+                img.classList.add("show")
+            return _show
+
+        window.setTimeout(make_show(im), i * 140)
+
+def hide_loading_cards():
+    overlay = document.getElementById("loading-overlay")
+    if overlay:
+        overlay.classList.add("hidden")
+
 def set_img_src_initial(img, url: str):
     # 初回表示用：読み込み完了まで隠す
     img.classList.remove("ready")
@@ -350,6 +385,8 @@ async def reset_async():
     try:
         await ensure_cards()
 
+        show_loading_cards()
+
         # ===== 全フラグ完全リセット =====
         game_over = False
         dobon_waiting = False
@@ -388,6 +425,9 @@ async def reset_async():
         set_msg("Newゲーム！。同じマーク or 同じ数字\n出せるカードが無い→山から取る。", ok=True)
         
         render_all()
+
+        await asyncio.sleep(0.5)
+        hide_loading_cards() 
         
         current_player_idx = 0
         current_player = TURN_ORDER[current_player_idx]  # = "you"
