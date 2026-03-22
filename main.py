@@ -583,7 +583,7 @@ def hand_sum(cards):
     return sum(card_to_suit_rank(cid)[1] for cid in cards)
 
 async def try_dobon_async():
-    global busy, game_over, dobon_waiting, last_actor
+    global busy, game_over, dobon_waiting, last_actor,last_winner
 
     if busy:
         return
@@ -626,7 +626,8 @@ async def try_dobon_async():
 
         # ===== 勝利 =====
         loser = last_actor if last_actor is not None else "（不明）"
-
+        last_winner = "you"
+        
         set_msg(
             "ドボン！ あなたの勝ち！\n"
             f"手札：{total} = 場：{target}  負け：{loser}",
