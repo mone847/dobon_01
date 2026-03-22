@@ -214,6 +214,7 @@ def choose_card_lv3(
     - 自分のドボン圏を作る
     - 相手の危険度を下げる
     - 場に出たカード(discard + field)を利用して残り数字を推定
+    - ただし、ドボン圏に入ったら「攻めモード」に切り替える
     """
     if field is None:
         return None
@@ -234,6 +235,7 @@ def choose_card_lv3(
         new_hand = hand[:]
         new_hand.remove(c)
 
+        # 残り0枚は通常の出し方では不可
         if len(new_hand) == 0:
             continue
 
@@ -248,9 +250,17 @@ def choose_card_lv3(
 
         # ===== 1. 勝ち筋：ドボン圏へ =====
         if 1 <= new_total <= 13:
+            # ドボン圏に入ったら大幅加点
             score += 7000
             score += (13 - new_total) * 20
+
+            # 小さい数ほどドボンしやすいのでさらに加点
+            if new_total <= 5:
+                score += 2000
+            elif new_total <= 8:
+                score += 800
         else:
+            # 圏外は強く減点
             score -= 6000
             score -= (new_total - 13) * 60
 
@@ -283,14 +293,21 @@ def choose_card_lv3(
             discard=discard,
             field=field,
         )
-        score -= danger
+
+        # ドボン圏に入ったら少し攻める
+        if 1 <= new_total <= 13:
+            score -= danger * 0.4
+        else:
+            score -= danger
 
         # ===== 5. 場を動かさない補正（弱め） =====
         if keep_field_bias and rank_of(c) == field_rank:
             score += 90
 
         # tie-break
-        if (score > best_score) or (score == best_score and (best is None or rank_of(c) > rank_of(best))):
+        if (score > best_score) or (
+            score == best_score and (best is None or rank_of(c) > rank_of(best))
+        ):
             best_score = score
             best = c
 
