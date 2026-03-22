@@ -132,9 +132,15 @@ def img_el(src: str, cls: str = ""):
         im.className = cls
     return im
 
-def set_img_src_safely(img, url: str):
+def set_img_src_initial(img, url: str):
+    # 初回表示用：読み込み完了まで隠す
     img.classList.remove("ready")
     img.src = url
+
+def set_img_src_smooth(img, url: str):
+    # 通常更新用：隠さず、そのまま差し替える
+    img.src = url
+    img.classList.add("ready")
 
 def render_cpu(panel_title_el, panel_cards_el, name: str, cards_list, pid: str):
     global reveal_cpu
@@ -192,9 +198,8 @@ def render_you_title():
 
 def render_deck():
     deck_title.innerText = f"山のカード（{len(deck)}枚）"
-    set_img_src_safely(deck_img, _cards.getUrl(0))
+    set_img_src_smooth(deck_img, _cards.getUrl(0))
 
-    # ★出せるカードがあるなら山札は引けない
     if len(deck) == 0 or has_playable():
         deck_img.classList.add("disabled")
     else:
@@ -202,9 +207,9 @@ def render_deck():
 
 def render_field():
     if field is None:
-        set_img_src_safely(field_img, _cards.getUrl(0))
+        set_img_src_smooth(field_img, _cards.getUrl(0))
     else:
-        set_img_src_safely(field_img, _cards.getUrl(field))
+        set_img_src_smooth(field_img, _cards.getUrl(field))
 
 def render_hand():
     global event_proxies
@@ -373,8 +378,8 @@ async def reset_async():
         field = deck.pop()
 
         # 画像初期化（リンク切れ防止）
-        set_img_src_safely(field_img, _cards.getUrl(field))
-        set_img_src_safely(deck_img, _cards.getUrl(0))
+        set_img_src_initial(field_img, _cards.getUrl(field))
+        set_img_src_initial(deck_img, _cards.getUrl(0))
         # UI初期化
         deck_img.classList.remove("disabled")
         dobon_btn.disabled = False
