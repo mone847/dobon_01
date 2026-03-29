@@ -583,7 +583,7 @@ def hand_sum(cards):
     return sum(card_to_suit_rank(cid)[1] for cid in cards)
 
 async def try_dobon_async():
-    global busy, game_over, dobon_waiting, last_actor,last_winner
+    global busy, dobon_waiting, last_actor
 
     if busy:
         return
@@ -603,7 +603,7 @@ async def try_dobon_async():
                 ng=True
             )
 
-            # ★CPU停止中なら再開
+            # CPU停止中なら再開
             if dobon_waiting:
                 dobon_waiting = False
                 set_dobon_alert(False)
@@ -624,25 +624,10 @@ async def try_dobon_async():
                 asyncio.create_task(run_cpu_turns_until_you())
             return
 
-        # ===== 勝利 =====
+        # ===== 勝利（you）=====
         loser = last_actor if last_actor is not None else "（不明）"
-        last_winner = "you"
-        
-        set_msg(
-            "ドボン！ あなたの勝ち！\n"
-            f"手札：{total} = 場：{target}  負け：{loser}",
-            ok=True
-        )
-        win_stats["you"]["win"] += 1
-        for p in win_stats:
-            win_stats[p]["total"] += 1
-
-        dobon_waiting = False
-        set_dobon_alert(False)
-        game_over = True
-
-        deck_img.classList.add("disabled")
-        dobon_btn.disabled = True
+        end_game_by_dobon("you", loser)
+        return
 
     finally:
         busy = False
